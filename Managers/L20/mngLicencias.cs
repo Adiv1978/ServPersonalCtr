@@ -1,0 +1,79 @@
+﻿using ClosedXML.Excel;
+using ServPersonalCtr.Managers.L10;
+using ServPersonalCtr.Types;
+
+namespace ServPersonalCtr.Managers.L20
+{
+    public class mngLicencias
+    {
+        private readonly ServPersonalCtr.Managers.L10.mngLicencias _mngLicenciasL10;
+
+        // Inyectamos el Manager de la Capa L10
+        public mngLicencias(ServPersonalCtr.Managers.L10.mngLicencias mngLicenciasL10)
+        {
+            _mngLicenciasL10 = mngLicenciasL10;
+        }
+
+        /// <summary>
+        /// Acceso intermedio para registrar una nueva licencia.
+        /// </summary>
+        public int SetLicencias(string token, int minutos, DTOLicencias licencia)
+        {
+            return _mngLicenciasL10.SetLicencias(token, minutos, licencia);
+        }
+
+        /// <summary>
+        /// Acceso intermedio para consultar licencias con filtros avanzados.
+        /// </summary>
+        public List<DTOLicencias> GetLicencias(string token, int minutos, int idPersona = 0,
+                                              DateTime? fecIni = null, DateTime? fecFin = null,
+                                              DateTime? regDesde = null, DateTime? regHasta = null)
+        {
+            return _mngLicenciasL10.GetLicencias(token, minutos, idPersona, fecIni, fecFin, regDesde, regHasta);
+        }
+
+        /// <summary>
+        /// Obtiene las licencias y genera un archivo Excel en memoria.
+        /// </summary>
+        public byte[] GetLicenciasExcel(string token, int minutos, int idPersona = 0,
+                                        DateTime? fecIni = null, DateTime? fecFin = null,
+                                        DateTime? regDesde = null, DateTime? regHasta = null)
+        {
+            var datos = _mngLicenciasL10.GetLicencias(token, minutos, idPersona, fecIni, fecFin, regDesde, regHasta);
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Hoja1");
+                worksheet.Cell(1, 1).Value = "No. Licencia";
+                worksheet.Cell(1, 2).Value = "Empleado";
+                worksheet.Cell(1, 3).Value = "Cédula";
+                worksheet.Cell(1, 4).Value = "Puesto";
+                worksheet.Cell(1, 5).Value = "Desde";
+                worksheet.Cell(1, 6).Value = "Hasta";
+                worksheet.Cell(1, 7).Value = "Días";
+                worksheet.Cell(1, 8).Value = "Diagnóstico";
+                var headerRange = worksheet.Range("A1:H1");
+                headerRange.Style.Font.Bold = true;
+                headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
+                int currentRow = 2;
+                foreach (var lic in datos)
+                {
+                    worksheet.Cell(currentRow, 1).Value = lic.NoLicencia;
+                    worksheet.Cell(currentRow, 2).Value = lic.EmpleadoNombreCompleto;
+                    worksheet.Cell(currentRow, 3).Value = lic.EmpleadoCedula;
+                    worksheet.Cell(currentRow, 4).Value = lic.PuestoTrabajo;
+                    worksheet.Cell(currentRow, 5).Value = lic.FecLicenciaIni.ToShortDateString();
+                    worksheet.Cell(currentRow, 6).Value = lic.FecLicenciaFin.ToShortDateString();
+                    worksheet.Cell(currentRow, 7).Value = lic.TiempoLicencia;
+                    worksheet.Cell(currentRow, 8).Value = lic.Diagnostico;
+                    currentRow++;
+                }
+                worksheet.Columns().AdjustToContents();
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    return stream.ToArray();
+                }
+            }
+        }
+    }
+}
