@@ -1,6 +1,5 @@
 ﻿using System.Data;
 using Npgsql;
-using Microsoft.Extensions.Configuration;
 
 namespace ServPersonalCtr.Managers.L00
 {
@@ -21,10 +20,23 @@ namespace ServPersonalCtr.Managers.L00
             DataTable dt = new DataTable();
             using (var conn = new NpgsqlConnection(_connectionString))
             {
-                using (var cmd = new NpgsqlCommand(functionName, conn))
+                using (var cmd = new NpgsqlCommand())
                 {
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    if (parameters != null) cmd.Parameters.AddRange(parameters.ToArray());
+                    cmd.Connection = conn;
+                    cmd.CommandType = CommandType.Text; // Cambiado a Text
+
+                    string paramPlaceholders = "";
+                    if (parameters != null && parameters.Count > 0)
+                    {
+                        // Aseguramos que los nombres de los parámetros tengan el prefijo '@'
+                        var paramNames = parameters.Select(p => p.ParameterName.StartsWith("@") ? p.ParameterName : "@" + p.ParameterName);
+                        paramPlaceholders = string.Join(", ", paramNames);
+
+                        cmd.Parameters.AddRange(parameters.ToArray());
+                    }
+
+                    // Armamos la consulta nativa de PostgreSQL
+                    cmd.CommandText = $"SELECT * FROM {functionName}({paramPlaceholders})";
 
                     conn.Open();
                     using (var da = new NpgsqlDataAdapter(cmd))
@@ -44,10 +56,21 @@ namespace ServPersonalCtr.Managers.L00
             object result = null;
             using (var conn = new NpgsqlConnection(_connectionString))
             {
-                using (var cmd = new NpgsqlCommand(functionName, conn))
+                using (var cmd = new NpgsqlCommand())
                 {
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    if (parameters != null) cmd.Parameters.AddRange(parameters.ToArray());
+                    cmd.Connection = conn;
+                    cmd.CommandType = CommandType.Text; // Cambiado a Text
+
+                    string paramPlaceholders = "";
+                    if (parameters != null && parameters.Count > 0)
+                    {
+                        var paramNames = parameters.Select(p => p.ParameterName.StartsWith("@") ? p.ParameterName : "@" + p.ParameterName);
+                        paramPlaceholders = string.Join(", ", paramNames);
+
+                        cmd.Parameters.AddRange(parameters.ToArray());
+                    }
+
+                    cmd.CommandText = $"SELECT * FROM {functionName}({paramPlaceholders})";
 
                     conn.Open();
                     result = cmd.ExecuteScalar();

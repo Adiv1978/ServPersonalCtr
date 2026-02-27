@@ -51,5 +51,30 @@ namespace ServPersonalCtr.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Endpoint para actualizar la contraseña del usuario.
+        /// </summary>
+        [HttpPut("UpdatePassword")]
+        public IActionResult UpdatePassword([FromBody] Types.UpdatePasswordRequest request)
+        {
+            try
+            {
+                bool success = _seguridadL20.UpdatePasswordUser(
+                    request.Token,
+                    request.Minutos,
+                    request.Nick,
+                    request.PassActual,
+                    request.PassNuevo
+                );
+                if (success)
+                    return Ok(new { message = "Contraseña actualizada exitosamente." });
+                return BadRequest(new { message = "No se pudo actualizar la contraseña." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

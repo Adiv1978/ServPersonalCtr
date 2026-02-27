@@ -25,8 +25,11 @@ namespace ServPersonalCtr.Managers.L10
                 new NpgsqlParameter("p_tokenid", token),
                 new NpgsqlParameter("p_minutoscaducaseccion", minutos),
                 new NpgsqlParameter("p_idpersona", licencia.IdPersona),
-                new NpgsqlParameter("p_feclicenciaini", licencia.FecLicenciaIni),
-                new NpgsqlParameter("p_feclicenciafin", licencia.FecLicenciaFin),
+                
+                // Forzamos explícitamente a que Npgsql las envíe como Date (sin hora)
+                new NpgsqlParameter("p_feclicenciaini", NpgsqlTypes.NpgsqlDbType.Date) { Value = licencia.FecLicenciaIni },
+                new NpgsqlParameter("p_feclicenciafin", NpgsqlTypes.NpgsqlDbType.Date) { Value = licencia.FecLicenciaFin },
+
                 new NpgsqlParameter("p_diagnostico", licencia.Diagnostico),
                 new NpgsqlParameter("p_nolicencia", licencia.NoLicencia),
                 new NpgsqlParameter("p_auditoria", licencia.Auditoria),
@@ -37,7 +40,6 @@ namespace ServPersonalCtr.Managers.L10
             object result = _dbManager.ExecuteFunctionScalar("fn_setlicencias", parameters);
             return Convert.ToInt32(result);
         }
-
         /// <summary>
         /// Obtiene el listado de licencias aplicando filtros dinámicos.
         /// </summary>
@@ -51,10 +53,15 @@ namespace ServPersonalCtr.Managers.L10
                 new NpgsqlParameter("p_tokenid", token),
                 new NpgsqlParameter("p_minutoscaducaseccion", minutos),
                 new NpgsqlParameter("p_idpersona", idPersona),
-                new NpgsqlParameter("p_fecinicio", fecIni ?? (object)DBNull.Value),
-                new NpgsqlParameter("p_fecfin", fecFin ?? (object)DBNull.Value),
-                new NpgsqlParameter("p_fecregdesde", regDesde ?? (object)DBNull.Value),
-                new NpgsqlParameter("p_fecreghasta", regHasta ?? (object)DBNull.Value)
+                
+                // Especificamos explícitamente el tipo Date para las fechas de licencia
+                new NpgsqlParameter("p_fecinicio", NpgsqlTypes.NpgsqlDbType.Date) { Value = fecIni ?? (object)DBNull.Value },
+                new NpgsqlParameter("p_fecfin", NpgsqlTypes.NpgsqlDbType.Date) { Value = fecFin ?? (object)DBNull.Value },
+                
+                // Especificamos el tipo para las fechas de registro 
+                // (Nota: Si tu función en Postgres espera 'date' en lugar de 'timestamp' para estos filtros, cambia NpgsqlDbType.Timestamp por NpgsqlDbType.Date)
+                new NpgsqlParameter("p_fecregdesde", NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = regDesde ?? (object)DBNull.Value },
+                new NpgsqlParameter("p_fecreghasta", NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = regHasta ?? (object)DBNull.Value }
             };
 
             DataTable dt = _dbManager.ExecuteFunctionDataTable("fn_getlicencia", parameters);
@@ -69,18 +76,23 @@ namespace ServPersonalCtr.Managers.L10
                     EmpleadoCedula = row["empleado_cedula"].ToString() ?? string.Empty,
                     EmpleadoNombreCompleto = row["empleado_nombre_completo"].ToString() ?? string.Empty,
                     PuestoTrabajo = row["puestotrabajo"].ToString() ?? string.Empty,
-                    FecLicenciaIni = Convert.ToDateTime(row["feclicenciaini"]),
-                    FecLicenciaFin = Convert.ToDateTime(row["feclicenciafin"]),
+                    FecLicenciaIni = row["feclicenciaini"] is DateOnly dIni
+                                     ? dIni.ToDateTime(TimeOnly.MinValue)
+                                     : Convert.ToDateTime(row["feclicenciaini"]),
+                    FecLicenciaFin = row["feclicenciafin"] is DateOnly dFin
+                                     ? dFin.ToDateTime(TimeOnly.MinValue)
+                                     : Convert.ToDateTime(row["feclicenciafin"]),
                     TiempoLicencia = Convert.ToInt32(row["tiempolicencia"]),
                     Diagnostico = row["diagnostico"].ToString() ?? string.Empty,
                     Observacion = row["observacion"].ToString() ?? string.Empty,
                     Auditoria = Convert.ToBoolean(row["auditoria"]),
-                    FechaRegistroSistema = Convert.ToDateTime(row["fecha_registro_sistema"]),
+                    FechaRegistroSistema = row["fecha_registro_sistema"] is DateOnly dReg
+                                           ? dReg.ToDateTime(TimeOnly.MinValue)
+                                           : Convert.ToDateTime(row["fecha_registro_sistema"]),
                     RegistradoPorId = Convert.ToInt32(row["registrado_por_id"]),
                     RegistradoPorNick = row["registrado_por_nick"].ToString() ?? string.Empty
                 });
             }
-
             return list;
         }
     }

@@ -70,5 +70,22 @@ namespace ServPersonalCtr.Managers.L10
 
             return null;
         }
+
+        /// <summary>
+        /// Actualiza la contraseña del usuario verificando sus credenciales actuales.
+        /// </summary>
+        public bool UpdatePasswordUser(string token, int minutos, string nick, string passActual, string passNuevo)
+        {
+            var parameters = new List<NpgsqlParameter>
+            {
+                new NpgsqlParameter("p_tokenid", token),
+                new NpgsqlParameter("p_minutoscaducaseccion", minutos),
+                new NpgsqlParameter("p_nick", nick),
+                new NpgsqlParameter("p_pass_actual", passActual),
+                new NpgsqlParameter("p_pass_nuevo", passNuevo)
+            };
+            object result = _dbManager.ExecuteFunctionScalar("fn_updatepassworduser", parameters);
+            return result != null && Convert.ToBoolean(result);
+        }
     }
 }

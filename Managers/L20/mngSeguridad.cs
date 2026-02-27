@@ -30,5 +30,17 @@ namespace ServPersonalCtr.Managers.L20
         {
             return _mngSeguridadL10.ValidateSeccion(token, minutos, rolLevel);
         }
+
+        /// <summary>
+        /// Intermedio para actualizar la contraseña del usuario.
+        /// </summary>
+        public bool UpdatePasswordUser(string token, int minutos, string nick, string passActual, string passNuevo)
+        {
+            if (string.IsNullOrWhiteSpace(passNuevo))
+                throw new ArgumentException("La nueva contraseña no puede estar en blanco.");
+            if (passActual == passNuevo)
+                throw new ArgumentException("La nueva contraseña no puede ser igual a la contraseña actual.");
+            return _mngSeguridadL10.UpdatePasswordUser(token, minutos, nick, passActual, passNuevo);
+        }
     }
 }
