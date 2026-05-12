@@ -77,5 +77,38 @@ namespace ServPersonalCtr.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [HttpGet("GetActivas")]
+        public IActionResult GetActivas(
+            [FromQuery] int numeroPagina,
+            [FromQuery] int tamanioPagina)
+        {
+            try
+            {
+                List<DTOLicencias> resultado = _licenciasL20.GetLicenciasActivas(numeroPagina, tamanioPagina);
+                return Ok(resultado);   
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("GetExcelActivas")]
+        public IActionResult GetExcelActivas(
+            [FromQuery] int numeroPagina,
+            [FromQuery] int tamanioPagina)
+        {
+            try
+            {
+                byte[] archivoExcel = _licenciasL20.GetLicenciasActivasExcell(numeroPagina, tamanioPagina);
+                string nombreArchivo = $"Reporte_Licencias_Activas_{DateTime.Now:yyyyMMdd}.xlsx";
+                return File(archivoExcel, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", nombreArchivo);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

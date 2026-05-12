@@ -100,13 +100,13 @@ namespace ServPersonalCtr.Managers.L10
         /// <summary>
         /// Obtiene licencias activas con paginación usando fn_getlicenciasactivas.
         /// </summary>
-        public List<DTOLicencias> GetLicenciasActivas(int numeroPagina, int tamañoPagina)
+        public List<DTOLicencias> GetLicenciasActivas(int numeroPagina, int tamanioPagina)
         {
             var list = new List<DTOLicencias>();
             var parameters = new List<NpgsqlParameter>
             {
                 new NpgsqlParameter("p_numero_pagina", numeroPagina),
-                new NpgsqlParameter("p_registros_por_pagina", tamañoPagina)
+                new NpgsqlParameter("p_registros_por_pagina", tamanioPagina)
             };
 
             DataTable dt = _dbManager.ExecuteFunctionDataTable("fn_getlicenciasactivas", parameters);
