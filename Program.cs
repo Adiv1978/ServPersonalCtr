@@ -15,10 +15,18 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("PermitirAngular", policy =>
     {
-        // Aquí pones la URL exacta de tu frontend (sin la barra / al final)
-        policy.WithOrigins("http://192.168.5.1")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy.SetIsOriginAllowed(origin =>
+        {
+            // Intentar parsear el origen como una URI válida
+            if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+            {
+                // Validar si el host (la IP) comienza con "10.8."
+                return uri.Host.StartsWith("10.8.");
+            }
+            return false;
+        })
+        .AllowAnyHeader()
+        .AllowAnyMethod();
     });
 });
 var app = builder.Build();
