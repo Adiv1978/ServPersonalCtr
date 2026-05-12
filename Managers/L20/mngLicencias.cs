@@ -50,8 +50,9 @@ namespace ServPersonalCtr.Managers.L20
                 worksheet.Cell(1, 5).Value = "Desde";
                 worksheet.Cell(1, 6).Value = "Hasta";
                 worksheet.Cell(1, 7).Value = "Días";
-                worksheet.Cell(1, 8).Value = "Diagnóstico";
-                var headerRange = worksheet.Range("A1:H1");
+                worksheet.Cell(1, 8).Value = "Días faltantes";
+                worksheet.Cell(1, 9).Value = "Diagnóstico";
+                var headerRange = worksheet.Range("A1:I1");
                 headerRange.Style.Font.Bold = true;
                 headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
                 int currentRow = 2;
@@ -64,7 +65,8 @@ namespace ServPersonalCtr.Managers.L20
                     worksheet.Cell(currentRow, 5).Value = lic.FecLicenciaIni.ToShortDateString();
                     worksheet.Cell(currentRow, 6).Value = lic.FecLicenciaFin.ToShortDateString();
                     worksheet.Cell(currentRow, 7).Value = lic.TiempoLicencia;
-                    worksheet.Cell(currentRow, 8).Value = lic.Diagnostico;
+                    worksheet.Cell(currentRow, 8).Value = lic.DiaFaltantes;
+                    worksheet.Cell(currentRow, 9).Value = lic.Diagnostico;
                     currentRow++;
                 }
                 worksheet.Columns().AdjustToContents();
