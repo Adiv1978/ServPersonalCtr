@@ -96,5 +96,51 @@ namespace ServPersonalCtr.Managers.L10
             }
             return list;
         }
+
+        /// <summary>
+        /// Obtiene licencias activas con paginación usando fn_getlicenciasactivas.
+        /// </summary>
+        public List<DTOLicencias> GetLicenciasActivas(int numeroPagina, int tamañoPagina)
+        {
+            var list = new List<DTOLicencias>();
+            var parameters = new List<NpgsqlParameter>
+            {
+                new NpgsqlParameter("p_numero_pagina", numeroPagina),
+                new NpgsqlParameter("p_registros_por_pagina", tamañoPagina)
+            };
+
+            DataTable dt = _dbManager.ExecuteFunctionDataTable("fn_getlicenciasactivas", parameters);
+
+            foreach (DataRow row in dt.Rows)
+            {
+                list.Add(new DTOLicencias
+                {
+                    LicenciaId = Convert.ToInt32(row["licencia_id"]),
+                    NoLicencia = row["nolicencia"].ToString() ?? string.Empty,
+                    IdPersona = Convert.ToInt32(row["idpersona"]),
+                    EmpleadoCedula = row["empleado_cedula"].ToString() ?? string.Empty,
+                    EmpleadoNombreCompleto = row["empleado_nombre_completo"].ToString() ?? string.Empty,
+                    PuestoTrabajo = row["puestotrabajo"].ToString() ?? string.Empty,
+                    FecLicenciaIni = row["feclicenciaini"] is DateOnly dIni
+                                     ? dIni.ToDateTime(TimeOnly.MinValue)
+                                     : Convert.ToDateTime(row["feclicenciaini"]),
+                    FecLicenciaFin = row["feclicenciafin"] is DateOnly dFin
+                                     ? dFin.ToDateTime(TimeOnly.MinValue)
+                                     : Convert.ToDateTime(row["feclicenciafin"]),
+                    TiempoLicencia = Convert.ToInt32(row["tiempolicencia"]),
+                    DiaFaltantes = Convert.ToInt32(row["diafaltantes"]),
+                    Diagnostico = row["diagnostico"].ToString() ?? string.Empty,
+                    Observacion = row["observacion"].ToString() ?? string.Empty,
+                    Auditoria = Convert.ToBoolean(row["auditoria"]),
+                    FechaRegistroSistema = row["fecha_registro_sistema"] is DateOnly dReg
+                                           ? dReg.ToDateTime(TimeOnly.MinValue)
+                                           : Convert.ToDateTime(row["fecha_registro_sistema"]),
+                    RegistradoPorId = Convert.ToInt32(row["registrado_por_id"]),
+                    RegistradoPorNick = row["registrado_por_nick"].ToString() ?? string.Empty
+                });
+            }
+
+            return list;
+        }
     }
 }
