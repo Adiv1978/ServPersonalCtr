@@ -18,6 +18,7 @@ namespace ServPersonalCtr.Types
         public DateTime FecLicenciaIni { get; set; }
         public DateTime FecLicenciaFin { get; set; }
         public int TiempoLicencia { get; set; }
+        public int DiaFaltantes { get; set; }
 
         // Detalles Médicos y Auditoría
         public string Diagnostico { get; set; } = string.Empty;

@@ -83,6 +83,7 @@ namespace ServPersonalCtr.Managers.L10
                                      ? dFin.ToDateTime(TimeOnly.MinValue)
                                      : Convert.ToDateTime(row["feclicenciafin"]),
                     TiempoLicencia = Convert.ToInt32(row["tiempolicencia"]),
+                    DiaFaltantes = Convert.ToInt32(row["diafaltantes"]),
                     Diagnostico = row["diagnostico"].ToString() ?? string.Empty,
                     Observacion = row["observacion"].ToString() ?? string.Empty,
                     Auditoria = Convert.ToBoolean(row["auditoria"]),
