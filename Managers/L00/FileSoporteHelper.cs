@@ -63,24 +63,25 @@ namespace ServPersonalCtr.Managers.L00
             if (pdfData == null || pdfData.Length == 0)
                 throw new ArgumentException("Debe especificar el contenido del archivo.", nameof(pdfData));
 
-            string credentialsPath = _configuration.GetValue<string>("GoogleDrive:CredentialsPath") ?? string.Empty;
-            string folderId = _configuration.GetValue<string>("GoogleDrive:FolderId") ?? string.Empty;
             string applicationName = _configuration.GetValue<string>("GoogleDrive:ApplicationName") ?? "ServPersonalCtr";
+            string folderId = _configuration.GetValue<string>("GoogleDrive:FolderId") ?? string.Empty;
+            string clientEmail = _configuration.GetValue<string>("GoogleDrive:ClientEmail") ?? string.Empty;
+            string privateKey = _configuration.GetValue<string>("GoogleDrive:PrivateKey") ?? string.Empty;
 
-            if (string.IsNullOrWhiteSpace(credentialsPath))
-                throw new InvalidOperationException("No se ha configurado GoogleDrive:CredentialsPath en appsettings.json.");
+            if (string.IsNullOrWhiteSpace(clientEmail))
+                throw new InvalidOperationException("No se ha configurado GoogleDrive:ClientEmail en appsettings.json.");
 
-            if (!File.Exists(credentialsPath))
-                throw new FileNotFoundException("No se encontró el archivo de credenciales de Google Drive.", credentialsPath);
+            if (string.IsNullOrWhiteSpace(privateKey))
+                throw new InvalidOperationException("No se ha configurado GoogleDrive:PrivateKey en appsettings.json.");
 
-            GoogleCredential credential;
+            privateKey = privateKey.Replace("\\n", "\n");
 
-            await using (FileStream credentialsStream = new FileStream(credentialsPath, FileMode.Open, FileAccess.Read))
-            {
-                credential = GoogleCredential
-                    .FromStream(credentialsStream)
-                    .CreateScoped(DriveService.Scope.DriveFile);
-            }
+            ServiceAccountCredential credential = new ServiceAccountCredential(
+                new ServiceAccountCredential.Initializer(clientEmail)
+                {
+                    Scopes = new[] { DriveService.Scope.DriveFile }
+                }.FromPrivateKey(privateKey)
+            );
 
             using DriveService driveService = new DriveService(new BaseClientService.Initializer
             {
