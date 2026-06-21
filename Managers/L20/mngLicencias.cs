@@ -1,4 +1,4 @@
-﻿using ClosedXML.Excel;
+using ClosedXML.Excel;
 using ServPersonalCtr.Managers.L10;
 using ServPersonalCtr.Types;
 
@@ -7,19 +7,51 @@ namespace ServPersonalCtr.Managers.L20
     public class mngLicencias
     {
         private readonly ServPersonalCtr.Managers.L10.mngLicencias _mngLicenciasL10;
+        private readonly MngFileSoporte _mngFileSoporte;
 
-        // Inyectamos el Manager de la Capa L10
-        public mngLicencias(ServPersonalCtr.Managers.L10.mngLicencias mngLicenciasL10)
+        // Inyectamos los Manager de la Capa L10
+        public mngLicencias(
+            ServPersonalCtr.Managers.L10.mngLicencias mngLicenciasL10,
+            MngFileSoporte mngFileSoporte)
         {
             _mngLicenciasL10 = mngLicenciasL10;
+            _mngFileSoporte = mngFileSoporte;
         }
 
         /// <summary>
         /// Acceso intermedio para registrar una nueva licencia.
+        /// Recibe la licencia y una lista opcional de archivos PDF en bytes.
+        /// Primero crea los soportes documentales y luego registra la licencia.
+        /// </summary>
+        public async Task<int> SetLicencias(
+            string token,
+            DTOLicencias licencia,
+            List<byte[]>? archivosPdf = null)
+        {
+            var soportesDoc = new List<DTOSoporteDoc>();
+
+            if (archivosPdf != null && archivosPdf.Count > 0)
+            {
+                foreach (byte[] archivoPdf in archivosPdf)
+                {
+                    if (archivoPdf == null || archivoPdf.Length == 0)
+                        continue;
+
+                    DTOSoporteDoc soporteDoc = await _mngFileSoporte.Create(archivoPdf);
+                    soportesDoc.Add(soporteDoc);
+                }
+            }
+
+            return _mngLicenciasL10.SetLicencias(token, licencia, soportesDoc);
+        }
+
+        /// <summary>
+        /// Compatibilidad temporal con llamadas anteriores.
+        /// El parametro minutos ya no se usa porque la caducidad se lee desde appsettings.json.
         /// </summary>
         public int SetLicencias(string token, int minutos, DTOLicencias licencia)
         {
-            return _mngLicenciasL10.SetLicencias(token, licencia);
+            return SetLicencias(token, licencia, null).GetAwaiter().GetResult();
         }
 
         /// <summary>
