@@ -29,5 +29,16 @@ namespace ServPersonalCtr.Managers.L10
 
             return soporteDoc;
         }
+
+        /// <summary>
+        /// Valida que el hash recibido coincida con el hash SHA256 del archivo almacenado.
+        /// </summary>
+        /// <param name="hash">Hash esperado del archivo.</param>
+        /// <param name="nombreArchivo">Nombre del archivo almacenado.</param>
+        /// <returns>True si el hash coincide.</returns>
+        public bool ValidateHash(string hash, string nombreArchivo)
+        {
+            return _fileSoporteHelper.ValidateHash(hash, nombreArchivo);
+        }
     }
 }
