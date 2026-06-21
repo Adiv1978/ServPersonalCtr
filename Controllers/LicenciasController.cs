@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using ServPersonalCtr.Managers.L20;
 using ServPersonalCtr.Types;
 
@@ -16,19 +16,43 @@ namespace ServPersonalCtr.Controllers
         }
 
         /// <summary>
-        /// Registra una nueva licencia médica.
+        /// Registra una nueva licencia médica y sus archivos PDF de soporte.
         /// </summary>
         [HttpPost("Set")]
-        public IActionResult SetLicencias([FromQuery] string token, [FromQuery] int minutos, [FromBody] DTOLicencias licencia)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> SetLicencias(
+            [FromQuery] string token,
+            [FromForm] DTOLicencias licencia,
+            [FromForm] List<IFormFile>? archivosPdf = null)
         {
             try
             {
-                int idGenerado = _licenciasL20.SetLicencias(token, minutos, licencia);
+                var archivosBytes = new List<byte[]>();
+
+                if (archivosPdf != null && archivosPdf.Count > 0)
+                {
+                    foreach (IFormFile archivoPdf in archivosPdf)
+                    {
+                        if (archivoPdf == null || archivoPdf.Length == 0)
+                            continue;
+
+                        await using var memoryStream = new MemoryStream();
+                        await archivoPdf.CopyToAsync(memoryStream);
+                        archivosBytes.Add(memoryStream.ToArray());
+                    }
+                }
+
+                int idGenerado = await _licenciasL20.SetLicencias(
+                    token,
+                    licencia,
+                    archivosBytes
+                );
+
                 return Ok(new { id = idGenerado, message = "Licencia registrada con éxito." });
             }
             catch (Exception ex)
             {
-                // Captura errores de validación de PostgreSQL (ej: fechas inválidas o duplicados)
+                // Captura errores de validación de PostgreSQL, archivos o Google Drive.
                 return BadRequest(new { message = ex.Message });
             }
         }
