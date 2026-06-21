@@ -1,4 +1,7 @@
 using System.Security.Cryptography;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Drive.v3;
+using Google.Apis.Services;
 using ServPersonalCtr.Types;
 
 namespace ServPersonalCtr.Managers.L00
@@ -43,6 +46,73 @@ namespace ServPersonalCtr.Managers.L00
                 NombreArchivo = nombreArchivo,
                 HashFile = hashFile
             };
+        }
+
+        /// <summary>
+        /// Guarda una copia de respaldo del archivo PDF en Google Drive.
+        /// Retorna el ID del archivo creado en Google Drive.
+        /// </summary>
+        /// <param name="nombreArchivo">Nombre con el que se guardará el archivo en Google Drive.</param>
+        /// <param name="pdfData">Contenido del archivo PDF en bytes.</param>
+        /// <returns>ID del archivo creado en Google Drive.</returns>
+        public async Task<string> SetBackup(string nombreArchivo, byte[] pdfData)
+        {
+            if (string.IsNullOrWhiteSpace(nombreArchivo))
+                throw new ArgumentException("Debe especificar el nombre del archivo.", nameof(nombreArchivo));
+
+            if (pdfData == null || pdfData.Length == 0)
+                throw new ArgumentException("Debe especificar el contenido del archivo.", nameof(pdfData));
+
+            string credentialsPath = _configuration.GetValue<string>("GoogleDrive:CredentialsPath") ?? string.Empty;
+            string folderId = _configuration.GetValue<string>("GoogleDrive:FolderId") ?? string.Empty;
+            string applicationName = _configuration.GetValue<string>("GoogleDrive:ApplicationName") ?? "ServPersonalCtr";
+
+            if (string.IsNullOrWhiteSpace(credentialsPath))
+                throw new InvalidOperationException("No se ha configurado GoogleDrive:CredentialsPath en appsettings.json.");
+
+            if (!File.Exists(credentialsPath))
+                throw new FileNotFoundException("No se encontró el archivo de credenciales de Google Drive.", credentialsPath);
+
+            GoogleCredential credential;
+
+            await using (FileStream credentialsStream = new FileStream(credentialsPath, FileMode.Open, FileAccess.Read))
+            {
+                credential = GoogleCredential
+                    .FromStream(credentialsStream)
+                    .CreateScoped(DriveService.Scope.DriveFile);
+            }
+
+            using DriveService driveService = new DriveService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = applicationName
+            });
+
+            var fileMetadata = new Google.Apis.Drive.v3.Data.File
+            {
+                Name = nombreArchivo
+            };
+
+            if (!string.IsNullOrWhiteSpace(folderId))
+                fileMetadata.Parents = new List<string> { folderId };
+
+            await using MemoryStream stream = new MemoryStream(pdfData);
+
+            FilesResource.CreateMediaUpload request = driveService.Files.Create(
+                fileMetadata,
+                stream,
+                "application/pdf"
+            );
+
+            request.Fields = "id, name";
+
+            Google.Apis.Upload.IUploadProgress uploadProgress = await request.UploadAsync();
+
+            if (uploadProgress.Status != Google.Apis.Upload.UploadStatus.Completed)
+                throw new InvalidOperationException($"No se pudo subir el archivo a Google Drive. Estado: {uploadProgress.Status}. Error: {uploadProgress.Exception?.Message}");
+
+            return request.ResponseBody?.Id
+                ?? throw new InvalidOperationException("Google Drive no retornó el ID del archivo creado.");
         }
 
         private static string GenerarHashSha256(byte[] data)
