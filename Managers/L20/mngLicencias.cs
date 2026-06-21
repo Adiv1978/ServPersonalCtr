@@ -6,10 +6,10 @@ namespace ServPersonalCtr.Managers.L20
 {
     public class mngLicencias
     {
-        private readonly ServPersonalCtr.Managers.L10.mngLicencias _mngLicenciasL10;
+        private readonly L10.mngLicencias _mngLicenciasL10;
 
         // Inyectamos el Manager de la Capa L10
-        public mngLicencias(ServPersonalCtr.Managers.L10.mngLicencias mngLicenciasL10)
+        public mngLicencias(L10.mngLicencias mngLicenciasL10)
         {
             _mngLicenciasL10 = mngLicenciasL10;
         }
