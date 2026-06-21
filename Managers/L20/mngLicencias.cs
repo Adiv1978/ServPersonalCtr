@@ -19,7 +19,7 @@ namespace ServPersonalCtr.Managers.L20
         /// </summary>
         public int SetLicencias(string token, int minutos, DTOLicencias licencia)
         {
-            return _mngLicenciasL10.SetLicencias(token, minutos, licencia);
+            return _mngLicenciasL10.SetLicencias(token, licencia);
         }
 
         /// <summary>

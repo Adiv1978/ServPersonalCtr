@@ -1,45 +1,91 @@
-﻿using System.Data;
-using Npgsql;
+﻿using Npgsql;
 using ServPersonalCtr.Managers.L00;
 using ServPersonalCtr.Types;
+using System.Data;
+using System.Text.Json;
 
 namespace ServPersonalCtr.Managers.L10
 {
     public class mngLicencias
     {
         private readonly DBGenericManager _dbManager;
+        private readonly IConfiguration _configuration;
 
-        public mngLicencias(DBGenericManager dbManager)
+        public mngLicencias(DBGenericManager dbManager, IConfiguration configuration)
         {
             _dbManager = dbManager;
+            _configuration = configuration;
         }
 
         /// <summary>
         /// Registra una nueva licencia médica.
         /// Retorna el ID autogenerado por la base de datos.
         /// </summary>
-        public int SetLicencias(string token, int minutos, DTOLicencias licencia)
+        public int SetLicencias(
+            string token,
+            DTOLicencias licencia,
+            List<DTOSoporteDoc>? soporteDoc = null)
         {
-            var parameters = new List<NpgsqlParameter>
-            {
-                new NpgsqlParameter("p_tokenid", token),
-                new NpgsqlParameter("p_minutoscaducaseccion", minutos),
-                new NpgsqlParameter("p_idpersona", licencia.IdPersona),
-                
-                // Forzamos explícitamente a que Npgsql las envíe como Date (sin hora)
-                new NpgsqlParameter("p_feclicenciaini", NpgsqlTypes.NpgsqlDbType.Date) { Value = licencia.FecLicenciaIni },
-                new NpgsqlParameter("p_feclicenciafin", NpgsqlTypes.NpgsqlDbType.Date) { Value = licencia.FecLicenciaFin },
-
-                new NpgsqlParameter("p_diagnostico", licencia.Diagnostico),
-                new NpgsqlParameter("p_nolicencia", licencia.NoLicencia),
-                new NpgsqlParameter("p_auditoria", licencia.Auditoria),
-                new NpgsqlParameter("p_observacion", licencia.Observacion ?? (object)DBNull.Value)
+            if (licencia == null)
+                throw new ArgumentNullException(nameof(licencia));
+            int minutos = _configuration.GetValue<int>("MinutoCaducidadSession");
+            if (minutos <= 0)
+                minutos = 60;
+            soporteDoc ??= new List<DTOSoporteDoc>();
+            var soportesDb = soporteDoc
+                .Where(s =>
+                    s != null &&
+                    !string.IsNullOrWhiteSpace(s.NombreArchivo) &&
+                    !string.IsNullOrWhiteSpace(s.HashFile))
+                .Select(s => new
+                {
+                    nombrearchivo = s.NombreArchivo,
+                    hashfile = s.HashFile
+                })
+                .ToList();
+            string soportesJson = JsonSerializer.Serialize(soportesDb);
+            var parameters = new List<NpgsqlParameter>{
+                new NpgsqlParameter("p_tokenid", NpgsqlTypes.NpgsqlDbType.Text){
+                    Value = token
+                },
+                new NpgsqlParameter("p_minutoscaducaseccion", NpgsqlTypes.NpgsqlDbType.Integer){
+                    Value = minutos
+                },
+                new NpgsqlParameter("p_idpersona", NpgsqlTypes.NpgsqlDbType.Integer){
+                    Value = licencia.IdPersona
+                },
+                new NpgsqlParameter("p_feclicenciaini", NpgsqlTypes.NpgsqlDbType.Date){
+                    Value = licencia.FecLicenciaIni
+                },
+                new NpgsqlParameter("p_feclicenciafin", NpgsqlTypes.NpgsqlDbType.Date){
+                    Value = licencia.FecLicenciaFin
+                },
+                new NpgsqlParameter("p_diagnostico", NpgsqlTypes.NpgsqlDbType.Text){
+                    Value = string.IsNullOrWhiteSpace(licencia.Diagnostico)
+                        ? DBNull.Value
+                        : licencia.Diagnostico
+                },
+                new NpgsqlParameter("p_nolicencia", NpgsqlTypes.NpgsqlDbType.Varchar){
+                    Value = string.IsNullOrWhiteSpace(licencia.NoLicencia)
+                        ? DBNull.Value
+                        : licencia.NoLicencia
+                },
+                new NpgsqlParameter("p_auditoria", NpgsqlTypes.NpgsqlDbType.Boolean){
+                    Value = licencia.Auditoria
+                },
+                new NpgsqlParameter("p_observacion", NpgsqlTypes.NpgsqlDbType.Text){
+                    Value = string.IsNullOrWhiteSpace(licencia.Observacion)
+                        ? DBNull.Value
+                        : licencia.Observacion
+                },
+                new NpgsqlParameter("p_soportes", NpgsqlTypes.NpgsqlDbType.Jsonb){
+                    Value = soportesJson
+                }
             };
-
-            // Usamos ExecuteFunctionScalar porque la función retorna un valor único (ID)
             object result = _dbManager.ExecuteFunctionScalar("fn_setlicencias", parameters);
             return Convert.ToInt32(result);
         }
+
         /// <summary>
         /// Obtiene el listado de licencias aplicando filtros dinámicos.
         /// </summary>
