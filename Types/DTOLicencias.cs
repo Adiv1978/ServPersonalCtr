@@ -25,6 +25,9 @@ namespace ServPersonalCtr.Types
         public string Observacion { get; set; } = string.Empty;
         public bool Auditoria { get; set; }
 
+        // Documentos soporte enviados al registrar la licencia
+        public List<DTOSoporteDoc> Soportes { get; set; } = new();
+
         // Datos de Registro (Desde vw_licencias / User)
         public DateTime FechaRegistroSistema { get; set; }
         public int RegistradoPorId { get; set; }
