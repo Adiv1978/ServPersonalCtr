@@ -26,10 +26,7 @@ namespace ServPersonalCtr.Managers.L00
             if (pdfData == null || pdfData.Length == 0)
                 throw new ArgumentException("Debe especificar los datos del archivo.", nameof(pdfData));
 
-            string rutaSoporteDoc = _configuration.GetValue<string>("rutadoportedoc") ?? "\\filesoporte\\";
-
-            if (string.IsNullOrWhiteSpace(rutaSoporteDoc))
-                rutaSoporteDoc = "\\filesoporte\\";
+            string rutaSoporteDoc = ObtenerRutaSoporteDoc();
 
             if (!Directory.Exists(rutaSoporteDoc))
                 Directory.CreateDirectory(rutaSoporteDoc);
@@ -46,6 +43,35 @@ namespace ServPersonalCtr.Managers.L00
                 NombreArchivo = nombreArchivo,
                 HashFile = hashFile
             };
+        }
+
+        /// <summary>
+        /// Valida que el hash recibido coincida con el hash SHA256 del archivo almacenado.
+        /// </summary>
+        /// <param name="hash">Hash esperado del archivo.</param>
+        /// <param name="nombreArchivo">Nombre del archivo almacenado.</param>
+        /// <returns>True si el hash coincide.</returns>
+        public bool ValidateHash(string hash, string nombreArchivo)
+        {
+            if (string.IsNullOrWhiteSpace(hash))
+                throw new ArgumentException("Debe especificar el hash del archivo.", nameof(hash));
+
+            if (string.IsNullOrWhiteSpace(nombreArchivo))
+                throw new ArgumentException("Debe especificar el nombre del archivo.", nameof(nombreArchivo));
+
+            string rutaSoporteDoc = ObtenerRutaSoporteDoc();
+            string rutaCompleta = Path.Combine(rutaSoporteDoc, nombreArchivo);
+
+            if (!File.Exists(rutaCompleta))
+                throw new FileNotFoundException($"Archivo no encontrado: {nombreArchivo}", rutaCompleta);
+
+            byte[] contenidoArchivo = File.ReadAllBytes(rutaCompleta);
+            string hashCalculado = GenerarHashSha256(contenidoArchivo);
+
+            if (!string.Equals(hashCalculado, hash, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"El hash del archivo {nombreArchivo} no coincide con el hash especificado.");
+
+            return true;
         }
 
         /// <summary>
@@ -114,6 +140,16 @@ namespace ServPersonalCtr.Managers.L00
 
             return request.ResponseBody?.Id
                 ?? throw new InvalidOperationException("Google Drive no retornó el ID del archivo creado.");
+        }
+
+        private string ObtenerRutaSoporteDoc()
+        {
+            string rutaSoporteDoc = _configuration.GetValue<string>("rutadoportedoc") ?? "\\filesoporte\\";
+
+            if (string.IsNullOrWhiteSpace(rutaSoporteDoc))
+                rutaSoporteDoc = "\\filesoporte\\";
+
+            return rutaSoporteDoc;
         }
 
         private static string GenerarHashSha256(byte[] data)
