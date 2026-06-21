@@ -2,6 +2,8 @@ var builder = WebApplication.CreateBuilder(args);
 //builder.WebHost.UseUrls("http://*:8080");
 // Add services to the container.
 builder.Services.AddScoped<ServPersonalCtr.Managers.L00.DBGenericManager>();
+builder.Services.AddScoped<ServPersonalCtr.Managers.L00.FileSoporteHelper>();
+builder.Services.AddScoped<ServPersonalCtr.Managers.L10.MngFileSoporte>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L10.mngSeguridad>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L20.mngSeguridad>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L10.mngPersonal>();
