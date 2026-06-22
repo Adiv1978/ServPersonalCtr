@@ -79,6 +79,25 @@ namespace ServPersonalCtr.Controllers
             }
         }
 
+        /// <summary>
+        /// Actualiza una licencia existente.
+        /// </summary>
+        [HttpPut("Update")]
+        public IActionResult UpdateLicencia(
+            [FromQuery] string token,
+            [FromBody] UpdateLicenciaRequest request)
+        {
+            try
+            {
+                bool resultado = _licenciasL20.UpdateLicencia(token, request);
+                return Ok(new UpdateLicenciaResponse { Resultado = resultado });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpGet("GetExcel")]
         public IActionResult GetExcel(
             [FromQuery] string token,
