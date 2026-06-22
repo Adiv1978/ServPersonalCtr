@@ -5,12 +5,14 @@ builder.Services.AddScoped<ServPersonalCtr.Managers.L00.DBGenericManager>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L00.FileSoporteHelper>();
 builder.Services.AddHttpClient<ServPersonalCtr.Managers.L00.GptHelper>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L10.MngFileSoporte>();
+builder.Services.AddScoped<ServPersonalCtr.Managers.L10.MngGpt>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L10.mngSeguridad>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L20.mngSeguridad>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L10.mngPersonal>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L20.mngPersonal>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L10.mngLicencias>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L20.mngLicencias>();
+builder.Services.AddScoped<ServPersonalCtr.Managers.L20.MngGpt>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
