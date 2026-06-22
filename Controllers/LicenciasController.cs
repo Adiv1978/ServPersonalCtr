@@ -48,11 +48,10 @@ namespace ServPersonalCtr.Controllers
                     archivosBytes
                 );
 
-                return Ok(new { id = idGenerado, message = "Licencia registrada con éxito." });
+                return Ok(new { id = idGenerado, message = "Licencia registrada con exito." });
             }
             catch (Exception ex)
             {
-                // Captura errores de validación de PostgreSQL, archivos o Google Drive.
                 return BadRequest(new { message = ex.Message });
             }
         }
@@ -63,7 +62,6 @@ namespace ServPersonalCtr.Controllers
         [HttpGet("Get")]
         public IActionResult GetLicencias(
             [FromQuery] string token,
-            [FromQuery] int minutos,
             [FromQuery] int idPersona = 0,
             [FromQuery] DateTime? fecIni = null,
             [FromQuery] DateTime? fecFin = null,
@@ -72,7 +70,7 @@ namespace ServPersonalCtr.Controllers
         {
             try
             {
-                var resultado = _licenciasL20.GetLicencias(token, minutos, idPersona, fecIni, fecFin, regDesde, regHasta);
+                var resultado = _licenciasL20.GetLicencias(token, idPersona, fecIni, fecFin, regDesde, regHasta);
                 return Ok(resultado);
             }
             catch (Exception ex)
@@ -83,15 +81,14 @@ namespace ServPersonalCtr.Controllers
 
         [HttpGet("GetExcel")]
         public IActionResult GetExcel(
-    [FromQuery] string token,
-    [FromQuery] int minutos,
-    [FromQuery] int idPersona = 0,
-    [FromQuery] DateTime? fecIni = null,
-    [FromQuery] DateTime? fecFin = null)
+            [FromQuery] string token,
+            [FromQuery] int idPersona = 0,
+            [FromQuery] DateTime? fecIni = null,
+            [FromQuery] DateTime? fecFin = null)
         {
             try
             {
-                byte[] archivoExcel = _licenciasL20.GetLicenciasExcel(token, minutos, idPersona, fecIni, fecFin);
+                byte[] archivoExcel = _licenciasL20.GetLicenciasExcel(token, idPersona, fecIni, fecFin);
                 string nombreArchivo = $"Reporte_Licencias_{DateTime.Now:yyyyMMdd}.xlsx";
 
                 return File(archivoExcel, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", nombreArchivo);
@@ -110,7 +107,7 @@ namespace ServPersonalCtr.Controllers
             try
             {
                 List<DTOLicencias> resultado = _licenciasL20.GetLicenciasActivas(numeroPagina, tamanioPagina);
-                return Ok(resultado);   
+                return Ok(resultado);
             }
             catch (Exception ex)
             {
