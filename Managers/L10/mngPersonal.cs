@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using Npgsql;
 using ServPersonalCtr.Managers.L00;
 using ServPersonalCtr.Types;
@@ -8,18 +8,22 @@ namespace ServPersonalCtr.Managers.L10
     public class mngPersonal
     {
         private readonly DBGenericManager _dbManager;
+        private readonly IConfiguration _configuration;
 
-        public mngPersonal(DBGenericManager dbManager)
+        public mngPersonal(DBGenericManager dbManager, IConfiguration configuration)
         {
             _dbManager = dbManager;
+            _configuration = configuration;
         }
 
         /// <summary>
-        /// Registra o actualiza un empleado. 
-        /// Requiere Rol 1 (Admin) validado en la base de datos.
+        /// Registra o actualiza un empleado.
+        /// Requiere Rol 1 validado en la base de datos.
         /// </summary>
-        public int SetPersonal(string token, int minutos, DTOPersonal personal)
+        public int SetPersonal(string token, DTOPersonal personal)
         {
+            int minutos = ObtenerMinutosCaducidadSession();
+
             var parameters = new List<NpgsqlParameter>
             {
                 new NpgsqlParameter("p_tokenid", token),
@@ -31,7 +35,6 @@ namespace ServPersonalCtr.Managers.L10
                 new NpgsqlParameter("p_puestotrabajo", personal.PuestoTrabajo)
             };
 
-            // Usamos Scalar porque la función retorna un solo valor (el ID)
             object result = _dbManager.ExecuteFunctionScalar("fn_setpersonal", parameters);
             return Convert.ToInt32(result);
         }
@@ -39,9 +42,11 @@ namespace ServPersonalCtr.Managers.L10
         /// <summary>
         /// Obtiene el listado de personal filtrado.
         /// </summary>
-        public List<DTOPersonal> GetPersonal(string token, int minutos, int id = 0, string busqueda = "")
+        public List<DTOPersonal> GetPersonal(string token, int id = 0, string busqueda = "")
         {
+            int minutos = ObtenerMinutosCaducidadSession();
             var personalList = new List<DTOPersonal>();
+
             var parameters = new List<NpgsqlParameter>
             {
                 new NpgsqlParameter("p_tokenid", token),
@@ -66,6 +71,16 @@ namespace ServPersonalCtr.Managers.L10
             }
 
             return personalList;
+        }
+
+        private int ObtenerMinutosCaducidadSession()
+        {
+            int minutos = _configuration.GetValue<int>("MinutoCaducidadSession");
+
+            if (minutos <= 0)
+                minutos = 60;
+
+            return minutos;
         }
     }
 }
