@@ -1,4 +1,4 @@
-﻿using ServPersonalCtr.Managers.L10;
+using ServPersonalCtr.Managers.L10;
 using ServPersonalCtr.Types;
 
 namespace ServPersonalCtr.Managers.L20
@@ -15,17 +15,17 @@ namespace ServPersonalCtr.Managers.L20
         /// <summary>
         /// Acceso intermedio para registrar o actualizar personal.
         /// </summary>
-        public int SetPersonal(string token, int minutos, DTOPersonal personal)
+        public int SetPersonal(string token, DTOPersonal personal)
         {
-            return _mngPersonalL10.SetPersonal(token, minutos, personal);
+            return _mngPersonalL10.SetPersonal(token, personal);
         }
 
         /// <summary>
         /// Acceso intermedio para consultar el listado de personal.
         /// </summary>
-        public List<DTOPersonal> GetPersonal(string token, int minutos, int id = 0, string busqueda = "")
+        public List<DTOPersonal> GetPersonal(string token, int id = 0, string busqueda = "")
         {
-            return _mngPersonalL10.GetPersonal(token, minutos, id, busqueda);
+            return _mngPersonalL10.GetPersonal(token, id, busqueda);
         }
     }
 }
