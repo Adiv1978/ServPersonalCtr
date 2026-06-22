@@ -190,6 +190,61 @@ namespace ServPersonalCtr.Managers.L10
             return list;
         }
 
+        /// <summary>
+        /// Actualiza los datos principales de una licencia existente.
+        /// El token se recibe aparte y los minutos de sesión se obtienen desde appsettings.
+        /// </summary>
+        public bool UpdateLicencia(string token, UpdateLicenciaRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            int minutos = ObtenerMinutosCaducidadSession();
+
+            var parameters = new List<NpgsqlParameter>
+            {
+                new NpgsqlParameter("p_tokenid", NpgsqlTypes.NpgsqlDbType.Text)
+                {
+                    Value = token
+                },
+                new NpgsqlParameter("p_minutoscaducaseccion", NpgsqlTypes.NpgsqlDbType.Integer)
+                {
+                    Value = minutos
+                },
+                new NpgsqlParameter("p_idlicencia", NpgsqlTypes.NpgsqlDbType.Integer)
+                {
+                    Value = request.IdLicencia
+                },
+                new NpgsqlParameter("p_feclicenciaini", NpgsqlTypes.NpgsqlDbType.Date)
+                {
+                    Value = request.FecLicenciaIni
+                },
+                new NpgsqlParameter("p_feclicenciafin", NpgsqlTypes.NpgsqlDbType.Date)
+                {
+                    Value = request.FecLicenciaFin
+                },
+                new NpgsqlParameter("p_diagnostico", NpgsqlTypes.NpgsqlDbType.Text)
+                {
+                    Value = string.IsNullOrWhiteSpace(request.Diagnostico)
+                        ? DBNull.Value
+                        : request.Diagnostico
+                },
+                new NpgsqlParameter("p_auditoria", NpgsqlTypes.NpgsqlDbType.Boolean)
+                {
+                    Value = request.Auditoria
+                },
+                new NpgsqlParameter("p_observacion", NpgsqlTypes.NpgsqlDbType.Text)
+                {
+                    Value = string.IsNullOrWhiteSpace(request.Observacion)
+                        ? DBNull.Value
+                        : request.Observacion
+                }
+            };
+
+            object result = _dbManager.ExecuteFunctionScalar("fn_updatelicencia", parameters);
+            return Convert.ToBoolean(result);
+        }
+
         private int ObtenerMinutosCaducidadSession()
         {
             int minutos = _configuration.GetValue<int>("MinutoCaducidadSession");
