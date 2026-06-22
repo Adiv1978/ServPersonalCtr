@@ -1,4 +1,4 @@
-﻿using Npgsql;
+using Npgsql;
 using ServPersonalCtr.Managers.L00;
 using ServPersonalCtr.Types;
 using System.Data;
@@ -28,10 +28,10 @@ namespace ServPersonalCtr.Managers.L10
         {
             if (licencia == null)
                 throw new ArgumentNullException(nameof(licencia));
-            int minutos = _configuration.GetValue<int>("MinutoCaducidadSession");
-            if (minutos <= 0)
-                minutos = 60;
+
+            int minutos = ObtenerMinutosCaducidadSession();
             soporteDoc ??= new List<DTOSoporteDoc>();
+
             var soportesDb = soporteDoc
                 .Where(s =>
                     s != null &&
@@ -43,7 +43,9 @@ namespace ServPersonalCtr.Managers.L10
                     hashfile = s.HashFile
                 })
                 .ToList();
+
             string soportesJson = JsonSerializer.Serialize(soportesDb);
+
             var parameters = new List<NpgsqlParameter>{
                 new NpgsqlParameter("p_tokenid", NpgsqlTypes.NpgsqlDbType.Text){
                     Value = token
@@ -82,6 +84,7 @@ namespace ServPersonalCtr.Managers.L10
                     Value = soportesJson
                 }
             };
+
             object result = _dbManager.ExecuteFunctionScalar("fn_setlicencias", parameters);
             return Convert.ToInt32(result);
         }
@@ -89,23 +92,20 @@ namespace ServPersonalCtr.Managers.L10
         /// <summary>
         /// Obtiene el listado de licencias aplicando filtros dinámicos.
         /// </summary>
-        public List<DTOLicencias> GetLicencias(string token, int minutos, int idPersona = 0,
+        public List<DTOLicencias> GetLicencias(string token, int idPersona = 0,
                                               DateTime? fecIni = null, DateTime? fecFin = null,
                                               DateTime? regDesde = null, DateTime? regHasta = null)
         {
+            int minutos = ObtenerMinutosCaducidadSession();
             var list = new List<DTOLicencias>();
+
             var parameters = new List<NpgsqlParameter>
             {
                 new NpgsqlParameter("p_tokenid", token),
                 new NpgsqlParameter("p_minutoscaducaseccion", minutos),
                 new NpgsqlParameter("p_idpersona", idPersona),
-                
-                // Especificamos explícitamente el tipo Date para las fechas de licencia
                 new NpgsqlParameter("p_fecinicio", NpgsqlTypes.NpgsqlDbType.Date) { Value = fecIni ?? (object)DBNull.Value },
                 new NpgsqlParameter("p_fecfin", NpgsqlTypes.NpgsqlDbType.Date) { Value = fecFin ?? (object)DBNull.Value },
-                
-                // Especificamos el tipo para las fechas de registro 
-                // (Nota: Si tu función en Postgres espera 'date' en lugar de 'timestamp' para estos filtros, cambia NpgsqlDbType.Timestamp por NpgsqlDbType.Date)
                 new NpgsqlParameter("p_fecregdesde", NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = regDesde ?? (object)DBNull.Value },
                 new NpgsqlParameter("p_fecreghasta", NpgsqlTypes.NpgsqlDbType.Timestamp) { Value = regHasta ?? (object)DBNull.Value }
             };
@@ -140,6 +140,7 @@ namespace ServPersonalCtr.Managers.L10
                     RegistradoPorNick = row["registrado_por_nick"].ToString() ?? string.Empty
                 });
             }
+
             return list;
         }
 
@@ -187,6 +188,16 @@ namespace ServPersonalCtr.Managers.L10
             }
 
             return list;
+        }
+
+        private int ObtenerMinutosCaducidadSession()
+        {
+            int minutos = _configuration.GetValue<int>("MinutoCaducidadSession");
+
+            if (minutos <= 0)
+                minutos = 60;
+
+            return minutos;
         }
     }
 }
