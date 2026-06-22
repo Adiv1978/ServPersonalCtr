@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using ServPersonalCtr.Managers.L20;
 using ServPersonalCtr.Types;
 
@@ -21,14 +21,13 @@ namespace ServPersonalCtr.Controllers
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> AnalizarLicenciaPdfAsync(
             [FromQuery] string token,
-            [FromQuery] int minutos,
             [FromQuery] short rolLevel,
             [FromForm] IFormFile archivoPdf)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(token))
-                    return Unauthorized(new { message = "Debe especificar el token de sesión." });
+                    return Unauthorized(new { message = "Debe especificar el token de sesion." });
 
                 if (archivoPdf == null || archivoPdf.Length == 0)
                     return BadRequest(new { message = "Debe enviar un archivo PDF." });
@@ -36,10 +35,10 @@ namespace ServPersonalCtr.Controllers
                 if (!archivoPdf.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                     return BadRequest(new { message = "El archivo debe ser un PDF." });
 
-                DTOSession session = _seguridadL20.ValidateSeccion(token, minutos, rolLevel);
+                DTOSession session = _seguridadL20.ValidateSeccion(token, rolLevel);
 
                 if (session == null || string.IsNullOrWhiteSpace(session.Token))
-                    return Unauthorized(new { message = "Sesión inválida o expirada." });
+                    return Unauthorized(new { message = "Sesion invalida o expirada." });
 
                 await using MemoryStream memoryStream = new MemoryStream();
                 await archivoPdf.CopyToAsync(memoryStream);
