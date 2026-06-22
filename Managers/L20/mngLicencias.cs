@@ -46,22 +46,13 @@ namespace ServPersonalCtr.Managers.L20
         }
 
         /// <summary>
-        /// Compatibilidad temporal con llamadas anteriores.
-        /// El parametro minutos ya no se usa porque la caducidad se lee desde appsettings.json.
-        /// </summary>
-        public int SetLicencias(string token, int minutos, DTOLicencias licencia)
-        {
-            return SetLicencias(token, licencia, null).GetAwaiter().GetResult();
-        }
-
-        /// <summary>
         /// Acceso intermedio para consultar licencias con filtros avanzados.
         /// </summary>
-        public List<DTOLicencias> GetLicencias(string token, int minutos, int idPersona = 0,
+        public List<DTOLicencias> GetLicencias(string token, int idPersona = 0,
                                               DateTime? fecIni = null, DateTime? fecFin = null,
                                               DateTime? regDesde = null, DateTime? regHasta = null)
         {
-            return _mngLicenciasL10.GetLicencias(token, minutos, idPersona, fecIni, fecFin, regDesde, regHasta);
+            return _mngLicenciasL10.GetLicencias(token, idPersona, fecIni, fecFin, regDesde, regHasta);
         }
 
         public List<DTOLicencias> GetLicenciasActivas(int numeroPagina, int tamanioPagina)
@@ -72,23 +63,23 @@ namespace ServPersonalCtr.Managers.L20
         /// <summary>
         /// Obtiene las licencias y genera un archivo Excel en memoria.
         /// </summary>
-        public byte[] GetLicenciasExcel(string token, int minutos, int idPersona = 0,
+        public byte[] GetLicenciasExcel(string token, int idPersona = 0,
                                         DateTime? fecIni = null, DateTime? fecFin = null,
                                         DateTime? regDesde = null, DateTime? regHasta = null)
         {
-            var datos = _mngLicenciasL10.GetLicencias(token, minutos, idPersona, fecIni, fecFin, regDesde, regHasta);
+            var datos = _mngLicenciasL10.GetLicencias(token, idPersona, fecIni, fecFin, regDesde, regHasta);
             using (var workbook = new XLWorkbook())
             {
                 var worksheet = workbook.Worksheets.Add("Hoja1");
                 worksheet.Cell(1, 1).Value = "No. Licencia";
                 worksheet.Cell(1, 2).Value = "Empleado";
-                worksheet.Cell(1, 3).Value = "Cédula";
+                worksheet.Cell(1, 3).Value = "Cedula";
                 worksheet.Cell(1, 4).Value = "Puesto";
                 worksheet.Cell(1, 5).Value = "Desde";
                 worksheet.Cell(1, 6).Value = "Hasta";
-                worksheet.Cell(1, 7).Value = "Días";
-                worksheet.Cell(1, 8).Value = "Días faltantes";
-                worksheet.Cell(1, 9).Value = "Diagnóstico";
+                worksheet.Cell(1, 7).Value = "Dias";
+                worksheet.Cell(1, 8).Value = "Dias faltantes";
+                worksheet.Cell(1, 9).Value = "Diagnostico";
                 var headerRange = worksheet.Range("A1:I1");
                 headerRange.Style.Font.Bold = true;
                 headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
@@ -123,13 +114,13 @@ namespace ServPersonalCtr.Managers.L20
                 var worksheet = workbook.Worksheets.Add("Hoja1");
                 worksheet.Cell(1, 1).Value = "No. Licencia";
                 worksheet.Cell(1, 2).Value = "Empleado";
-                worksheet.Cell(1, 3).Value = "Cédula";
+                worksheet.Cell(1, 3).Value = "Cedula";
                 worksheet.Cell(1, 4).Value = "Puesto";
                 worksheet.Cell(1, 5).Value = "Desde";
                 worksheet.Cell(1, 6).Value = "Hasta";
-                worksheet.Cell(1, 7).Value = "Días";
-                worksheet.Cell(1, 8).Value = "Días faltantes";
-                worksheet.Cell(1, 9).Value = "Diagnóstico";
+                worksheet.Cell(1, 7).Value = "Dias";
+                worksheet.Cell(1, 8).Value = "Dias faltantes";
+                worksheet.Cell(1, 9).Value = "Diagnostico";
                 var headerRange = worksheet.Range("A1:I1");
                 headerRange.Style.Font.Bold = true;
                 headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
