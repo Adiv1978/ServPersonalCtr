@@ -16,12 +16,9 @@ namespace ServPersonalCtr.Managers.L10
             _configuration = configuration;
         }
 
-        /// <summary>
-        /// Realiza el login y genera una nueva sesión.
-        /// </summary>
-        public DTOSession SetSeccion(string nick, string pass)
+        public DTOSession SetSeccion(string nick, string pass, int minutos)
         {
-            int minutos = ObtenerMinutosCaducidadSession();
+            minutos = ObtenerMinutosCaducidadSession();
 
             var parameters = new List<NpgsqlParameter>
             {
@@ -46,12 +43,14 @@ namespace ServPersonalCtr.Managers.L10
             return null;
         }
 
-        /// <summary>
-        /// Valida si una sesión es vigente y si el usuario tiene el nivel de rol requerido.
-        /// </summary>
-        public DTOSession ValidateSeccion(string token, short rolLevel)
+        public DTOSession SetSeccion(string nick, string pass)
         {
-            int minutos = ObtenerMinutosCaducidadSession();
+            return SetSeccion(nick, pass, 0);
+        }
+
+        public DTOSession ValidateSeccion(string token, int minutos, short rolLevel)
+        {
+            minutos = ObtenerMinutosCaducidadSession();
 
             var parameters = new List<NpgsqlParameter>
             {
@@ -76,12 +75,14 @@ namespace ServPersonalCtr.Managers.L10
             return null;
         }
 
-        /// <summary>
-        /// Actualiza la contraseña del usuario verificando sus credenciales actuales.
-        /// </summary>
-        public bool UpdatePasswordUser(string token, string nick, string passActual, string passNuevo)
+        public DTOSession ValidateSeccion(string token, short rolLevel)
         {
-            int minutos = ObtenerMinutosCaducidadSession();
+            return ValidateSeccion(token, 0, rolLevel);
+        }
+
+        public bool UpdatePasswordUser(string token, int minutos, string nick, string passActual, string passNuevo)
+        {
+            minutos = ObtenerMinutosCaducidadSession();
 
             var parameters = new List<NpgsqlParameter>
             {
@@ -91,18 +92,20 @@ namespace ServPersonalCtr.Managers.L10
                 new NpgsqlParameter("p_pass_actual", passActual),
                 new NpgsqlParameter("p_pass_nuevo", passNuevo)
             };
-
             object result = _dbManager.ExecuteFunctionScalar("fn_updatepassworduser", parameters);
             return result != null && Convert.ToBoolean(result);
+        }
+
+        public bool UpdatePasswordUser(string token, string nick, string passActual, string passNuevo)
+        {
+            return UpdatePasswordUser(token, 0, nick, passActual, passNuevo);
         }
 
         private int ObtenerMinutosCaducidadSession()
         {
             int minutos = _configuration.GetValue<int>("MinutoCaducidadSession");
-
             if (minutos <= 0)
                 minutos = 60;
-
             return minutos;
         }
     }
