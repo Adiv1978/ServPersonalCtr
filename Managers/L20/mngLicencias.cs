@@ -52,12 +52,12 @@ namespace ServPersonalCtr.Managers.L20
             return _mngLicenciasL10.GetLicenciasActivas(numeroPagina, tamanioPagina);
         }
 
-        public bool UpdateLicencia(string token, UpdateLicenciaRequest request)
+        public bool UpdateLicencia(UpdateLicenciaRequest request)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            return _mngLicenciasL10.UpdateLicencia(token, request);
+            return _mngLicenciasL10.UpdateLicencia(request);
         }
 
         public byte[] GetLicenciasExcel(string token, int idPersona = 0,
