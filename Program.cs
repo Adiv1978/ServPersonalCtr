@@ -18,7 +18,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("PermitirAngular", policy =>
+    /*options.AddPolicy("PermitirAngular", policy =>
     {
         policy.SetIsOriginAllowed(origin =>
         {
@@ -32,10 +32,17 @@ builder.Services.AddCors(options =>
         })
         .AllowAnyHeader()
         .AllowAnyMethod();
-    });
+    });*/
+    options.AddPolicy("AllowAngularDev",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:4200") // El origen de tu Angular
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
 });
 var app = builder.Build();
-app.UseCors("PermitirAngular");
+app.UseCors("AllowAngularDev");
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

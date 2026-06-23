@@ -52,6 +52,25 @@ namespace ServPersonalCtr.Managers.L20
             return _mngLicenciasL10.GetLicenciaSoporteDoc(request);
         }
 
+        public byte[] GetLicenciasDoc(string token, DTOLicencias licencia)
+        {
+            if (licencia == null)
+                throw new ArgumentNullException(nameof(licencia));
+
+            List<DTOSoporteDoc> soportes = _mngLicenciasL10.GetLicenciaSoporteDoc(new GetSoporteDocRequest
+            {
+                Token = token,
+                IdLicencia = licencia.LicenciaId
+            });
+
+            List<string> nombresArchivos = soportes
+                .Where(x => !string.IsNullOrWhiteSpace(x.NombreArchivo))
+                .Select(x => x.NombreArchivo)
+                .ToList();
+
+            return _mngFileSoporte.BuildLicenciaPdf(nombresArchivos, licencia);
+        }
+
         public List<DTOLicencias> GetLicenciasActivas(int numeroPagina, int tamanioPagina)
         {
             return _mngLicenciasL10.GetLicenciasActivas(numeroPagina, tamanioPagina);

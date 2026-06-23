@@ -93,6 +93,22 @@ namespace ServPersonalCtr.Controllers
             }
         }
 
+        [HttpPost("GetDoc")]
+        public IActionResult GetLicenciasDoc([FromQuery] string token, [FromBody] DTOLicencias licencia)
+        {
+            try
+            {
+                byte[] archivoPdf = _licenciasL20.GetLicenciasDoc(token, licencia);
+                string nombreArchivo = $"Licencia_{licencia.LicenciaId}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+
+                return File(archivoPdf, "application/pdf", nombreArchivo);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpPut("Update")]
         public IActionResult UpdateLicencia([FromBody] DTOUpdateLicenciaRequest request)
         {
