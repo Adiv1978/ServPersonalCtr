@@ -35,7 +35,7 @@ namespace ServPersonalCtr.Controllers
                 if (!archivoPdf.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                     return BadRequest(new { message = "El archivo debe ser un PDF." });
 
-                DTOSession session = _seguridadL20.ValidateSeccion(token, 0, rolLevel);
+                DTOSession session = _seguridadL20.ValidateSeccion(token, rolLevel);
 
                 if (session == null || string.IsNullOrWhiteSpace(session.Token))
                     return Unauthorized(new { message = "Sesion invalida o expirada." });

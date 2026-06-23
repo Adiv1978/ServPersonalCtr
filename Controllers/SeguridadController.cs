@@ -24,7 +24,7 @@ namespace ServPersonalCtr.Controllers
         {
             try
             {
-                var session = _seguridadL20.SetSeccion(request.Nick, request.Pass, request.Minutos);
+                var session = _seguridadL20.SetSeccion(request.Nick, request.Pass);
                 if (session == null)
                     return Unauthorized(new { message = "Credenciales incorrectas o usuario inactivo." });
                 return Ok(session);
@@ -39,11 +39,11 @@ namespace ServPersonalCtr.Controllers
         /// Endpoint para validar si un token sigue siendo válido.
         /// </summary>
         [HttpGet("Validate")]
-        public IActionResult Validate([FromQuery] string token, [FromQuery] int minutos, [FromQuery] short rolLevel)
+        public IActionResult Validate([FromQuery] string token, [FromQuery] short rolLevel)
         {
             try
             {
-                var session = _seguridadL20.ValidateSeccion(token, minutos, rolLevel);
+                var session = _seguridadL20.ValidateSeccion(token, rolLevel);
                 return Ok(session);
             }
             catch (Exception ex)
@@ -62,7 +62,6 @@ namespace ServPersonalCtr.Controllers
             {
                 bool success = _seguridadL20.UpdatePasswordUser(
                     request.Token,
-                    request.Minutos,
                     request.Nick,
                     request.PassActual,
                     request.PassNuevo

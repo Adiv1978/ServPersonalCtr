@@ -16,9 +16,9 @@ namespace ServPersonalCtr.Managers.L10
             _configuration = configuration;
         }
 
-        public DTOSession SetSeccion(string nick, string pass, int minutos)
+        public DTOSession SetSeccion(string nick, string pass)
         {
-            minutos = ObtenerMinutosCaducidadSession();
+            int minutos = ObtenerMinutosCaducidadSession();
 
             var parameters = new List<NpgsqlParameter>
             {
@@ -43,14 +43,9 @@ namespace ServPersonalCtr.Managers.L10
             return null;
         }
 
-        public DTOSession SetSeccion(string nick, string pass)
+        public DTOSession ValidateSeccion(string token, short rolLevel)
         {
-            return SetSeccion(nick, pass, 0);
-        }
-
-        public DTOSession ValidateSeccion(string token, int minutos, short rolLevel)
-        {
-            minutos = ObtenerMinutosCaducidadSession();
+            int minutos = ObtenerMinutosCaducidadSession();
 
             var parameters = new List<NpgsqlParameter>
             {
@@ -75,14 +70,9 @@ namespace ServPersonalCtr.Managers.L10
             return null;
         }
 
-        public DTOSession ValidateSeccion(string token, short rolLevel)
+        public bool UpdatePasswordUser(string token, string nick, string passActual, string passNuevo)
         {
-            return ValidateSeccion(token, 0, rolLevel);
-        }
-
-        public bool UpdatePasswordUser(string token, int minutos, string nick, string passActual, string passNuevo)
-        {
-            minutos = ObtenerMinutosCaducidadSession();
+            int minutos = ObtenerMinutosCaducidadSession();
 
             var parameters = new List<NpgsqlParameter>
             {
@@ -94,11 +84,6 @@ namespace ServPersonalCtr.Managers.L10
             };
             object result = _dbManager.ExecuteFunctionScalar("fn_updatepassworduser", parameters);
             return result != null && Convert.ToBoolean(result);
-        }
-
-        public bool UpdatePasswordUser(string token, string nick, string passActual, string passNuevo)
-        {
-            return UpdatePasswordUser(token, 0, nick, passActual, passNuevo);
         }
 
         private int ObtenerMinutosCaducidadSession()
