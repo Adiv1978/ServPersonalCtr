@@ -192,9 +192,9 @@ namespace ServPersonalCtr.Managers.L10
 
         /// <summary>
         /// Actualiza los datos principales de una licencia existente.
-        /// El token se recibe aparte y los minutos de sesión se obtienen desde appsettings.
+        /// Los minutos de sesión se obtienen desde appsettings.
         /// </summary>
-        public bool UpdateLicencia(string token, UpdateLicenciaRequest request)
+        public bool UpdateLicencia(UpdateLicenciaRequest request)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -205,7 +205,7 @@ namespace ServPersonalCtr.Managers.L10
             {
                 new NpgsqlParameter("p_tokenid", NpgsqlTypes.NpgsqlDbType.Text)
                 {
-                    Value = token
+                    Value = request.TokenId
                 },
                 new NpgsqlParameter("p_minutoscaducaseccion", NpgsqlTypes.NpgsqlDbType.Integer)
                 {
