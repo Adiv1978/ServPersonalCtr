@@ -83,13 +83,11 @@ namespace ServPersonalCtr.Controllers
         /// Actualiza una licencia existente.
         /// </summary>
         [HttpPut("Update")]
-        public IActionResult UpdateLicencia(
-            [FromQuery] string token,
-            [FromBody] UpdateLicenciaRequest request)
+        public IActionResult UpdateLicencia([FromBody] UpdateLicenciaRequest request)
         {
             try
             {
-                bool resultado = _licenciasL20.UpdateLicencia(token, request);
+                bool resultado = _licenciasL20.UpdateLicencia(request);
                 return Ok(new UpdateLicenciaResponse { Resultado = resultado });
             }
             catch (Exception ex)
