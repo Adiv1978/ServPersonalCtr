@@ -271,10 +271,24 @@ namespace ServPersonalCtr.Managers.L00
 
         private string ObtenerRutaSoporteDoc()
         {
-            string rutaSoporteDoc = _configuration.GetValue<string>("rutadoportedoc") ?? "\\filesoporte\\";
+            string rutaSoporteDoc = _configuration.GetValue<string>("rutadoportedoc") ?? "/app/filesoporte";
 
             if (string.IsNullOrWhiteSpace(rutaSoporteDoc))
-                rutaSoporteDoc = "\\filesoporte\\";
+                rutaSoporteDoc = "/app/filesoporte";
+
+            rutaSoporteDoc = rutaSoporteDoc.Trim()
+                .Replace('\\', Path.DirectorySeparatorChar)
+                .Replace('/', Path.DirectorySeparatorChar);
+
+            if (!Path.IsPathRooted(rutaSoporteDoc))
+            {
+                rutaSoporteDoc = Path.GetFullPath(
+                    Path.Combine(
+                        AppContext.BaseDirectory,
+                        rutaSoporteDoc.TrimStart(Path.DirectorySeparatorChar)
+                    )
+                );
+            }
 
             return rutaSoporteDoc;
         }

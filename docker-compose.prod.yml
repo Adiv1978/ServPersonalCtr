@@ -1,0 +1,36 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: servpersonalctr-app
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+    volumes:
+      - app_soportes:/app/filesoporte
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2.10
+    container_name: servpersonalctr-caddy
+    restart: unless-stopped
+    depends_on:
+      - app
+    env_file:
+      - .env.production
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  app_soportes:
+  caddy_data:
+  caddy_config:
