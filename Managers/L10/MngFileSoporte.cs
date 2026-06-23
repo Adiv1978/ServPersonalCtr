@@ -22,10 +22,10 @@ namespace ServPersonalCtr.Managers.L10
         {
             DTOSoporteDoc soporteDoc = _fileSoporteHelper.Create(pngData);
 
-            await _fileSoporteHelper.SetBackup(
+            /*await _fileSoporteHelper.SetBackup(
                 soporteDoc.NombreArchivo,
                 pngData
-            );
+            );*/
 
             return soporteDoc;
         }
