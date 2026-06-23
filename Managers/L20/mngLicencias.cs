@@ -18,11 +18,6 @@ namespace ServPersonalCtr.Managers.L20
             _mngFileSoporte = mngFileSoporte;
         }
 
-        /// <summary>
-        /// Acceso intermedio para registrar una nueva licencia.
-        /// Recibe la licencia y una lista opcional de archivos PDF en bytes.
-        /// Primero crea los soportes documentales y luego registra la licencia.
-        /// </summary>
         public async Task<int> SetLicencias(
             string token,
             DTOLicencias licencia,
@@ -45,9 +40,6 @@ namespace ServPersonalCtr.Managers.L20
             return _mngLicenciasL10.SetLicencias(token, licencia, soportesDoc);
         }
 
-        /// <summary>
-        /// Acceso intermedio para consultar licencias con filtros avanzados.
-        /// </summary>
         public List<DTOLicencias> GetLicencias(string token, int idPersona = 0,
                                               DateTime? fecIni = null, DateTime? fecFin = null,
                                               DateTime? regDesde = null, DateTime? regHasta = null)
