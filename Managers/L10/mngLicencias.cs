@@ -90,6 +90,60 @@ namespace ServPersonalCtr.Managers.L10
         }
 
         /// <summary>
+        /// Actualiza una licencia medica existente.
+        /// </summary>
+        public bool UpdateLicencia(DTOUpdateLicenciaRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            int minutos = ObtenerMinutosCaducidadSession();
+
+            var parameters = new List<NpgsqlParameter>
+            {
+                new NpgsqlParameter("p_tokenid", NpgsqlTypes.NpgsqlDbType.Text)
+                {
+                    Value = request.Token
+                },
+                new NpgsqlParameter("p_minutoscaducaseccion", NpgsqlTypes.NpgsqlDbType.Integer)
+                {
+                    Value = minutos
+                },
+                new NpgsqlParameter("p_idlicencia", NpgsqlTypes.NpgsqlDbType.Integer)
+                {
+                    Value = request.IdLicencia
+                },
+                new NpgsqlParameter("p_feclicenciaini", NpgsqlTypes.NpgsqlDbType.Date)
+                {
+                    Value = request.FecLicenciaIni
+                },
+                new NpgsqlParameter("p_feclicenciafin", NpgsqlTypes.NpgsqlDbType.Date)
+                {
+                    Value = request.FecLicenciaFin
+                },
+                new NpgsqlParameter("p_diagnostico", NpgsqlTypes.NpgsqlDbType.Text)
+                {
+                    Value = string.IsNullOrWhiteSpace(request.Diagnostico)
+                        ? DBNull.Value
+                        : request.Diagnostico
+                },
+                new NpgsqlParameter("p_auditoria", NpgsqlTypes.NpgsqlDbType.Boolean)
+                {
+                    Value = request.Auditoria
+                },
+                new NpgsqlParameter("p_observacion", NpgsqlTypes.NpgsqlDbType.Text)
+                {
+                    Value = string.IsNullOrWhiteSpace(request.Observacion)
+                        ? DBNull.Value
+                        : request.Observacion
+                }
+            };
+
+            object updateResult = _dbManager.ExecuteFunctionScalar("fn_updatelicencia", parameters);
+            return updateResult != null && Convert.ToBoolean(updateResult);
+        }
+
+        /// <summary>
         /// Obtiene el listado de licencias aplicando filtros dinámicos.
         /// </summary>
         public List<DTOLicencias> GetLicencias(string token, int idPersona = 0,

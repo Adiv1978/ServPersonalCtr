@@ -79,6 +79,24 @@ namespace ServPersonalCtr.Controllers
             }
         }
 
+        [HttpPut("Update")]
+        public IActionResult UpdateLicencia([FromBody] DTOUpdateLicenciaRequest request)
+        {
+            try
+            {
+                bool success = _licenciasL20.UpdateLicencia(request);
+
+                if (success)
+                    return Ok(new { message = "Licencia actualizada exitosamente." });
+
+                return BadRequest(new { message = "No se pudo actualizar la licencia." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpGet("GetExcel")]
         public IActionResult GetExcel(
             [FromQuery] string token,

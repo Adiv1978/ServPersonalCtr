@@ -61,6 +61,14 @@ namespace ServPersonalCtr.Managers.L20
         }
 
         /// <summary>
+        /// Acceso intermedio para actualizar una licencia existente.
+        /// </summary>
+        public bool UpdateLicencia(DTOUpdateLicenciaRequest request)
+        {
+            return _mngLicenciasL10.UpdateLicencia(request);
+        }
+
+        /// <summary>
         /// Obtiene las licencias y genera un archivo Excel en memoria.
         /// </summary>
         public byte[] GetLicenciasExcel(string token, int idPersona = 0,
