@@ -19,30 +19,33 @@ namespace ServPersonalCtr.Managers.L00
         }
 
         /// <summary>
-        /// Envía un documento PDF a OpenAI para analizar una licencia médica
+        /// Envia una imagen PNG a OpenAI para analizar una licencia medica
         /// y retorna los datos estructurados para serializar en GPT_Licencias.
         /// </summary>
-        /// <param name="pdfData">Contenido del PDF en bytes.</param>
-        /// <param name="nombreArchivo">Nombre del archivo PDF.</param>
-        /// <returns>Datos extraídos del documento.</returns>
-        public async Task<GPT_Licencias> AnalizarLicenciaPdfAsync(byte[] pdfData, string nombreArchivo = "licencia.pdf")
+        /// <param name="pdfData">Contenido de la imagen PNG en bytes.</param>
+        /// <param name="nombreArchivo">Nombre del archivo PNG.</param>
+        /// <returns>Datos extraidos de la imagen.</returns>
+        public async Task<GPT_Licencias> AnalizarLicenciaPdfAsync(byte[] pdfData, string nombreArchivo = "licencia.png")
         {
             if (pdfData == null || pdfData.Length == 0)
-                throw new ArgumentException("Debe especificar el contenido del PDF.", nameof(pdfData));
+                throw new ArgumentException("Debe especificar el contenido de la imagen PNG.", nameof(pdfData));
 
             if (string.IsNullOrWhiteSpace(nombreArchivo))
-                nombreArchivo = "licencia.pdf";
+                nombreArchivo = "licencia.png";
 
-            if (!nombreArchivo.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
-                nombreArchivo += ".pdf";
+            if (!nombreArchivo.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                nombreArchivo += ".png";
 
-            string apiKey = _configuration.GetValue<string>("OpenAI:ApiKey") ?? string.Empty;
-            string model = _configuration.GetValue<string>("OpenAI:Model") ?? "gpt-5.5";
+            string apiKey = (_configuration.GetValue<string>("OpenAI:ApiKey") ?? string.Empty).Trim();
+            string model = (_configuration.GetValue<string>("OpenAI:Model") ?? "gpt-5.5").Trim();
 
             if (string.IsNullOrWhiteSpace(apiKey))
                 throw new InvalidOperationException("No se ha configurado OpenAI:ApiKey en appsettings.json.");
 
-            string base64Pdf = Convert.ToBase64String(pdfData);
+            if (string.IsNullOrWhiteSpace(model))
+                throw new InvalidOperationException("No se ha configurado OpenAI:Model en appsettings.json.");
+
+            string base64Image = Convert.ToBase64String(pdfData);
 
             var requestBody = new
             {
@@ -56,31 +59,32 @@ namespace ServPersonalCtr.Managers.L00
                         {
                             new
                             {
-                                type = "input_file",
-                                filename = nombreArchivo,
-                                file_data = $"data:application/pdf;base64,{base64Pdf}"
-                            },
-                            new
-                            {
                                 type = "input_text",
                                 text = """
-                                Analiza este PDF de licencia médica y extrae los datos solicitados.
+                                Analiza esta imagen PNG de una licencia medica y extrae los datos solicitados.
 
                                 Reglas obligatorias:
-                                - Devuelve únicamente el JSON solicitado.
+                                - Devuelve unicamente el JSON solicitado.
                                 - No agregues explicaciones ni markdown.
                                 - No inventes datos.
                                 - Las fechas deben estar en formato yyyy-MM-dd.
-                                - EmpleadoCedula debe contener solo la cédula si aparece en el documento.
+                                - EmpleadoCedula debe contener solo la cedula si aparece en el documento.
                                 - EmpleadoNombreCompleto debe contener el nombre completo del empleado.
                                 - FecLicenciaIni es la fecha inicial de la licencia.
                                 - FecLicenciaFin es la fecha final de la licencia.
-                                - TiempoLicencia debe ser la cantidad de días de licencia.
-                                - Diagnostico debe contener el diagnóstico médico si aparece.
+                                - TiempoLicencia debe ser la cantidad de dias de licencia.
+                                - Diagnostico debe contener el diagnostico medico si aparece.
                                 - Observacion debe contener cualquier nota adicional relevante.
-                                - Si un texto no aparece, devuelve cadena vacía.
+                                - Si un texto no aparece, devuelve cadena vacia.
                                 - Si una fecha no aparece, usa "0001-01-01".
+                                - Si la imagen tiene texto poco legible, interpreta con cuidado sin inventar.
                                 """
+                            },
+                            new
+                            {
+                                type = "input_image",
+                                image_url = $"data:image/png;base64,{base64Image}",
+                                detail = "high"
                             }
                         }
                     }
@@ -125,30 +129,49 @@ namespace ServPersonalCtr.Managers.L00
 
             using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, OpenAiResponsesUrl);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            request.Headers.Accept.ParseAdd("application/json");
             request.Content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
-            using HttpResponseMessage response = await _httpClient.SendAsync(request);
-            string responseContent = await response.Content.ReadAsStringAsync();
-
-            if (!response.IsSuccessStatusCode)
-                throw new InvalidOperationException($"Error al consultar OpenAI. Status: {response.StatusCode}. Respuesta: {responseContent}");
-
-            string jsonLicencia = ExtraerJsonRespuesta(responseContent);
-
-            if (string.IsNullOrWhiteSpace(jsonLicencia))
-                throw new InvalidOperationException("OpenAI no retornó un JSON válido para la licencia.");
-
-            GPT_Licencias? licencia = JsonSerializer.Deserialize<GPT_Licencias>(jsonLicencia, new JsonSerializerOptions
+            try
             {
-                PropertyNameCaseInsensitive = true
-            });
+                using HttpResponseMessage response = await _httpClient.SendAsync(request);
+                string responseContent = await response.Content.ReadAsStringAsync();
 
-            return licencia ?? throw new InvalidOperationException("No se pudo deserializar la respuesta de OpenAI a GPT_Licencias.");
+                if (!response.IsSuccessStatusCode)
+                    throw new InvalidOperationException($"Error al consultar OpenAI. Status: {(int)response.StatusCode} {response.StatusCode}. Respuesta: {responseContent}");
+
+                string jsonLicencia = ExtraerJsonRespuesta(responseContent);
+
+                if (string.IsNullOrWhiteSpace(jsonLicencia))
+                    throw new InvalidOperationException("OpenAI no retorno un JSON valido para la licencia.");
+
+                GPT_Licencias? licencia = JsonSerializer.Deserialize<GPT_Licencias>(jsonLicencia, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return licencia ?? throw new InvalidOperationException("No se pudo deserializar la respuesta de OpenAI a GPT_Licencias.");
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new InvalidOperationException("No fue posible conectar con la API de OpenAI.", ex);
+            }
+            catch (TaskCanceledException ex)
+            {
+                throw new InvalidOperationException("La solicitud a OpenAI excedio el tiempo de espera.", ex);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException("La respuesta de OpenAI no tiene un formato JSON valido.", ex);
+            }
         }
 
         private static string ExtraerJsonRespuesta(string responseContent)
         {
             using JsonDocument doc = JsonDocument.Parse(responseContent);
+
+            if (doc.RootElement.TryGetProperty("output_text", out JsonElement outputTextElement))
+                return outputTextElement.GetString() ?? string.Empty;
 
             if (!doc.RootElement.TryGetProperty("output", out JsonElement outputArray))
                 return string.Empty;
@@ -160,6 +183,9 @@ namespace ServPersonalCtr.Managers.L00
 
                 foreach (JsonElement contentItem in contentArray.EnumerateArray())
                 {
+                    if (contentItem.TryGetProperty("refusal", out JsonElement refusalElement))
+                        throw new InvalidOperationException($"OpenAI rechazo la solicitud: {refusalElement.GetString()}");
+
                     if (contentItem.TryGetProperty("text", out JsonElement textElement))
                         return textElement.GetString() ?? string.Empty;
                 }

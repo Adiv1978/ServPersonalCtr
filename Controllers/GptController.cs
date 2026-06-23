@@ -22,18 +22,18 @@ namespace ServPersonalCtr.Controllers
         public async Task<IActionResult> AnalizarLicenciaPdfAsync(
             [FromQuery] string token,
             [FromQuery] short rolLevel,
-            [FromForm] IFormFile archivoPdf)
+            [FromForm] IFormFile archivoPng)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(token))
                     return Unauthorized(new { message = "Debe especificar el token de sesion." });
 
-                if (archivoPdf == null || archivoPdf.Length == 0)
-                    return BadRequest(new { message = "Debe enviar un archivo PDF." });
+                if (archivoPng == null || archivoPng.Length == 0)
+                    return BadRequest(new { message = "Debe enviar un archivo PNG." });
 
-                if (!archivoPdf.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
-                    return BadRequest(new { message = "El archivo debe ser un PDF." });
+                if (!archivoPng.FileName.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                    return BadRequest(new { message = "El archivo debe ser un PNG." });
 
                 DTOSession session = _seguridadL20.ValidateSeccion(token, rolLevel);
 
@@ -41,11 +41,11 @@ namespace ServPersonalCtr.Controllers
                     return Unauthorized(new { message = "Sesion invalida o expirada." });
 
                 await using MemoryStream memoryStream = new MemoryStream();
-                await archivoPdf.CopyToAsync(memoryStream);
+                await archivoPng.CopyToAsync(memoryStream);
 
                 GPT_Licencias resultado = await _gptL20.AnalizarLicenciaPdfAsync(
                     memoryStream.ToArray(),
-                    archivoPdf.FileName
+                    archivoPng.FileName
                 );
 
                 return Ok(resultado);

@@ -14,7 +14,7 @@ namespace ServPersonalCtr.Managers.L20
         /// <summary>
         /// Analiza un documento PDF de licencia médica consumiendo la capa L10.
         /// </summary>
-        public async Task<GPT_Licencias> AnalizarLicenciaPdfAsync(byte[] pdfData, string nombreArchivo = "licencia.pdf")
+        public async Task<GPT_Licencias> AnalizarLicenciaPdfAsync(byte[] pdfData, string nombreArchivo = "licencia.png")
         {
             return await _mngGptL10.AnalizarLicenciaPdfAsync(pdfData, nombreArchivo);
         }

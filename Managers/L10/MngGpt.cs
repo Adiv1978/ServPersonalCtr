@@ -18,7 +18,7 @@ namespace ServPersonalCtr.Managers.L10
         /// <param name="pdfData">Contenido del PDF en bytes.</param>
         /// <param name="nombreArchivo">Nombre del archivo PDF.</param>
         /// <returns>Datos extraídos del documento.</returns>
-        public async Task<GPT_Licencias> AnalizarLicenciaPdfAsync(byte[] pdfData, string nombreArchivo = "licencia.pdf")
+        public async Task<GPT_Licencias> AnalizarLicenciaPdfAsync(byte[] pdfData, string nombreArchivo = "licencia.png")
         {
             return await _gptHelper.AnalizarLicenciaPdfAsync(pdfData, nombreArchivo);
         }
