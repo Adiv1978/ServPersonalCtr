@@ -79,6 +79,20 @@ namespace ServPersonalCtr.Controllers
             }
         }
 
+        [HttpPost("GetSoporteDoc")]
+        public IActionResult GetLicenciaSoporteDoc([FromBody] GetSoporteDocRequest request)
+        {
+            try
+            {
+                List<DTOSoporteDoc> resultado = _licenciasL20.GetLicenciaSoporteDoc(request);
+                return Ok(resultado);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpPut("Update")]
         public IActionResult UpdateLicencia([FromBody] DTOUpdateLicenciaRequest request)
         {

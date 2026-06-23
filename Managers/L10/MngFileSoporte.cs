@@ -13,18 +13,18 @@ namespace ServPersonalCtr.Managers.L10
         }
 
         /// <summary>
-        /// Crea el archivo soporte en disco y luego realiza el respaldo en Google Drive.
+        /// Crea el archivo soporte PNG en disco y luego realiza el respaldo en Google Drive.
         /// Retorna el nombre del archivo y su hash.
         /// </summary>
-        /// <param name="pdfData">Contenido del archivo PDF en bytes.</param>
+        /// <param name="pngData">Contenido del archivo PNG en bytes.</param>
         /// <returns>DTO con nombre del archivo y hash generado.</returns>
-        public async Task<DTOSoporteDoc> Create(byte[] pdfData)
+        public async Task<DTOSoporteDoc> Create(byte[] pngData)
         {
-            DTOSoporteDoc soporteDoc = _fileSoporteHelper.Create(pdfData);
+            DTOSoporteDoc soporteDoc = _fileSoporteHelper.Create(pngData);
 
             await _fileSoporteHelper.SetBackup(
                 soporteDoc.NombreArchivo,
-                pdfData
+                pngData
             );
 
             return soporteDoc;
@@ -39,6 +39,17 @@ namespace ServPersonalCtr.Managers.L10
         public bool ValidateHash(string hash, string nombreArchivo)
         {
             return _fileSoporteHelper.ValidateHash(hash, nombreArchivo);
+        }
+
+        /// <summary>
+        /// Genera un PDF con el resumen de una licencia y sus imagenes de soporte.
+        /// </summary>
+        /// <param name="nombresArchivos">Nombres de archivos PNG ya almacenados.</param>
+        /// <param name="licencia">Informacion de la licencia.</param>
+        /// <returns>PDF generado en memoria.</returns>
+        public byte[] BuildLicenciaPdf(List<string>? nombresArchivos, DTOLicencias licencia)
+        {
+            return _fileSoporteHelper.BuildLicenciaPdf(nombresArchivos, licencia);
         }
     }
 }

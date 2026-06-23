@@ -146,6 +146,44 @@ namespace ServPersonalCtr.Managers.L10
         /// <summary>
         /// Obtiene el listado de licencias aplicando filtros dinámicos.
         /// </summary>
+        public List<DTOSoporteDoc> GetLicenciaSoporteDoc(GetSoporteDocRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            int minutos = ObtenerMinutosCaducidadSession();
+            var list = new List<DTOSoporteDoc>();
+
+            var parameters = new List<NpgsqlParameter>
+            {
+                new NpgsqlParameter("p_tokenid", NpgsqlTypes.NpgsqlDbType.Text)
+                {
+                    Value = request.Token
+                },
+                new NpgsqlParameter("p_minutoscaducaseccion", NpgsqlTypes.NpgsqlDbType.Integer)
+                {
+                    Value = minutos
+                },
+                new NpgsqlParameter("p_idlicencia", NpgsqlTypes.NpgsqlDbType.Integer)
+                {
+                    Value = request.IdLicencia
+                }
+            };
+
+            DataTable dt = _dbManager.ExecuteFunctionDataTable("fn_getsoportedoc", parameters);
+
+            foreach (DataRow row in dt.Rows)
+            {
+                list.Add(new DTOSoporteDoc
+                {
+                    NombreArchivo = row["nombrearchivo"].ToString() ?? string.Empty,
+                    HashFile = row["hashfile"].ToString() ?? string.Empty
+                });
+            }
+
+            return list;
+        }
+
         public List<DTOLicencias> GetLicencias(string token, int idPersona = 0,
                                               DateTime? fecIni = null, DateTime? fecFin = null,
                                               DateTime? regDesde = null, DateTime? regHasta = null)

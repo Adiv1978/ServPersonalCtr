@@ -2,6 +2,9 @@ using System.Security.Cryptography;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
 using Google.Apis.Services;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 using ServPersonalCtr.Types;
 
 namespace ServPersonalCtr.Managers.L00
@@ -13,30 +16,31 @@ namespace ServPersonalCtr.Managers.L00
         public FileSoporteHelper(IConfiguration configuration)
         {
             _configuration = configuration;
+            QuestPDF.Settings.License = LicenseType.Community;
         }
 
         /// <summary>
-        /// Crea un archivo de soporte documental en disco, genera su hash SHA256
+        /// Crea un archivo de soporte documental PNG en disco, genera su hash SHA256
         /// y retorna el nombre del archivo junto con el hash generado.
         /// </summary>
-        /// <param name="pdfData">Bytes del archivo a guardar.</param>
+        /// <param name="pngData">Bytes del archivo PNG a guardar.</param>
         /// <returns>DTO con nombre del archivo y hash SHA256.</returns>
-        public DTOSoporteDoc Create(byte[] pdfData)
+        public DTOSoporteDoc Create(byte[] pngData)
         {
-            if (pdfData == null || pdfData.Length == 0)
-                throw new ArgumentException("Debe especificar los datos del archivo.", nameof(pdfData));
+            if (pngData == null || pngData.Length == 0)
+                throw new ArgumentException("Debe especificar los datos del archivo.", nameof(pngData));
 
             string rutaSoporteDoc = ObtenerRutaSoporteDoc();
 
             if (!Directory.Exists(rutaSoporteDoc))
                 Directory.CreateDirectory(rutaSoporteDoc);
 
-            string nombreArchivo = $"SF_{DateTime.Now:ddMMyyyy_HHmmss}.png";
+            string nombreArchivo = $"SF_{DateTime.Now:ddMMyyyy_HHmmss_fff}.png";
             string rutaCompleta = Path.Combine(rutaSoporteDoc, nombreArchivo);
 
-            string hashFile = GenerarHashSha256(pdfData);
+            string hashFile = GenerarHashSha256(pngData);
 
-            File.WriteAllBytes(rutaCompleta, pdfData);
+            File.WriteAllBytes(rutaCompleta, pngData);
 
             return new DTOSoporteDoc
             {
@@ -59,8 +63,7 @@ namespace ServPersonalCtr.Managers.L00
             if (string.IsNullOrWhiteSpace(nombreArchivo))
                 throw new ArgumentException("Debe especificar el nombre del archivo.", nameof(nombreArchivo));
 
-            string rutaSoporteDoc = ObtenerRutaSoporteDoc();
-            string rutaCompleta = Path.Combine(rutaSoporteDoc, nombreArchivo);
+            string rutaCompleta = ObtenerRutaCompletaArchivo(nombreArchivo);
 
             if (!File.Exists(rutaCompleta))
                 throw new FileNotFoundException($"Archivo no encontrado: {nombreArchivo}", rutaCompleta);
@@ -75,19 +78,113 @@ namespace ServPersonalCtr.Managers.L00
         }
 
         /// <summary>
-        /// Guarda una copia de respaldo del archivo PDF en Google Drive.
+        /// Genera un PDF con la informacion de la licencia en la primera pagina
+        /// y adjunta una imagen PNG por cada pagina adicional.
+        /// </summary>
+        /// <param name="nombresArchivos">Lista de nombres de archivos PNG almacenados.</param>
+        /// <param name="licencia">Informacion de la licencia a incluir en el PDF.</param>
+        /// <returns>PDF generado en memoria.</returns>
+        public byte[] BuildLicenciaPdf(List<string>? nombresArchivos, DTOLicencias licencia)
+        {
+            if (licencia == null)
+                throw new ArgumentNullException(nameof(licencia));
+
+            List<byte[]> imagenes = CargarArchivosSoporte(nombresArchivos);
+
+            return Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Margin(30);
+                    page.Size(PageSizes.A4);
+                    page.DefaultTextStyle(x => x.FontSize(11));
+
+                    page.Header()
+                        .Text("Resumen de Licencia Medica")
+                        .FontSize(18)
+                        .SemiBold()
+                        .FontColor(Colors.Blue.Darken2);
+
+                    page.Content().Column(column =>
+                    {
+                        column.Spacing(8);
+                        column.Item().Text($"No. Licencia: {ValorTexto(licencia.NoLicencia)}");
+                        column.Item().Text($"Licencia ID: {licencia.LicenciaId}");
+                        column.Item().Text($"Empleado: {ValorTexto(licencia.EmpleadoNombreCompleto)}");
+                        column.Item().Text($"Cedula: {ValorTexto(licencia.EmpleadoCedula)}");
+                        column.Item().Text($"Puesto de trabajo: {ValorTexto(licencia.PuestoTrabajo)}");
+                        column.Item().Text($"Fecha inicio: {FormatearFecha(licencia.FecLicenciaIni)}");
+                        column.Item().Text($"Fecha fin: {FormatearFecha(licencia.FecLicenciaFin)}");
+                        column.Item().Text($"Tiempo licencia: {licencia.TiempoLicencia}");
+                        column.Item().Text($"Dias faltantes: {licencia.DiaFaltantes}");
+                        column.Item().Text($"Auditoria: {(licencia.Auditoria ? "Si" : "No")}");
+                        column.Item().Text($"Registrado por ID: {licencia.RegistradoPorId}");
+                        column.Item().Text($"Registrado por nick: {ValorTexto(licencia.RegistradoPorNick)}");
+                        column.Item().Text($"Fecha registro sistema: {FormatearFechaHora(licencia.FechaRegistroSistema)}");
+                        column.Item().PaddingTop(10).Text("Diagnostico").SemiBold();
+                        column.Item().Text(ValorTexto(licencia.Diagnostico));
+                        column.Item().PaddingTop(10).Text("Observacion").SemiBold();
+                        column.Item().Text(ValorTexto(licencia.Observacion));
+                    });
+
+                    page.Footer()
+                        .AlignCenter()
+                        .Text(text =>
+                        {
+                            text.Span("Pagina ");
+                            text.CurrentPageNumber();
+                            text.Span(" de ");
+                            text.TotalPages();
+                        });
+                });
+
+                foreach (byte[] imagen in imagenes)
+                {
+                    container.Page(page =>
+                    {
+                        page.Margin(20);
+                        page.Size(PageSizes.A4);
+                        page.DefaultTextStyle(x => x.FontSize(11));
+
+                        page.Header()
+                            .Text("Soporte Documental")
+                            .FontSize(16)
+                            .SemiBold();
+
+                        page.Content()
+                            .AlignCenter()
+                            .AlignMiddle()
+                            .Image(imagen)
+                            .FitArea();
+
+                        page.Footer()
+                            .AlignCenter()
+                            .Text(text =>
+                            {
+                                text.Span("Pagina ");
+                                text.CurrentPageNumber();
+                                text.Span(" de ");
+                                text.TotalPages();
+                            });
+                    });
+                }
+            }).GeneratePdf();
+        }
+
+        /// <summary>
+        /// Guarda una copia de respaldo del archivo PNG en Google Drive.
         /// Retorna el ID del archivo creado en Google Drive.
         /// </summary>
-        /// <param name="nombreArchivo">Nombre con el que se guardará el archivo en Google Drive.</param>
-        /// <param name="pdfData">Contenido del archivo PDF en bytes.</param>
+        /// <param name="nombreArchivo">Nombre con el que se guardara el archivo en Google Drive.</param>
+        /// <param name="pngData">Contenido del archivo PNG en bytes.</param>
         /// <returns>ID del archivo creado en Google Drive.</returns>
-        public async Task<string> SetBackup(string nombreArchivo, byte[] pdfData)
+        public async Task<string> SetBackup(string nombreArchivo, byte[] pngData)
         {
             if (string.IsNullOrWhiteSpace(nombreArchivo))
                 throw new ArgumentException("Debe especificar el nombre del archivo.", nameof(nombreArchivo));
 
-            if (pdfData == null || pdfData.Length == 0)
-                throw new ArgumentException("Debe especificar el contenido del archivo.", nameof(pdfData));
+            if (pngData == null || pngData.Length == 0)
+                throw new ArgumentException("Debe especificar el contenido del archivo.", nameof(pngData));
 
             string applicationName = _configuration.GetValue<string>("GoogleDrive:ApplicationName") ?? "ServPersonalCtr";
             string folderId = _configuration.GetValue<string>("GoogleDrive:FolderId") ?? string.Empty;
@@ -123,12 +220,12 @@ namespace ServPersonalCtr.Managers.L00
             if (!string.IsNullOrWhiteSpace(folderId))
                 fileMetadata.Parents = new List<string> { folderId };
 
-            await using MemoryStream stream = new MemoryStream(pdfData);
+            await using MemoryStream stream = new MemoryStream(pngData);
 
             FilesResource.CreateMediaUpload request = driveService.Files.Create(
                 fileMetadata,
                 stream,
-                "application/pdf"
+                "image/png"
             );
 
             request.Fields = "id, name";
@@ -139,7 +236,37 @@ namespace ServPersonalCtr.Managers.L00
                 throw new InvalidOperationException($"No se pudo subir el archivo a Google Drive. Estado: {uploadProgress.Status}. Error: {uploadProgress.Exception?.Message}");
 
             return request.ResponseBody?.Id
-                ?? throw new InvalidOperationException("Google Drive no retornó el ID del archivo creado.");
+                ?? throw new InvalidOperationException("Google Drive no retorno el ID del archivo creado.");
+        }
+
+        private List<byte[]> CargarArchivosSoporte(List<string>? nombresArchivos)
+        {
+            var imagenes = new List<byte[]>();
+
+            if (nombresArchivos == null || nombresArchivos.Count == 0)
+                return imagenes;
+
+            foreach (string nombreArchivo in nombresArchivos)
+            {
+                if (string.IsNullOrWhiteSpace(nombreArchivo))
+                    continue;
+
+                string rutaCompleta = ObtenerRutaCompletaArchivo(nombreArchivo);
+
+                if (!File.Exists(rutaCompleta))
+                    throw new FileNotFoundException($"Archivo no encontrado: {nombreArchivo}", rutaCompleta);
+
+                imagenes.Add(File.ReadAllBytes(rutaCompleta));
+            }
+
+            return imagenes;
+        }
+
+        private string ObtenerRutaCompletaArchivo(string nombreArchivo)
+        {
+            string rutaSoporteDoc = ObtenerRutaSoporteDoc();
+            string nombreSeguro = Path.GetFileName(nombreArchivo);
+            return Path.Combine(rutaSoporteDoc, nombreSeguro);
         }
 
         private string ObtenerRutaSoporteDoc()
@@ -150,6 +277,21 @@ namespace ServPersonalCtr.Managers.L00
                 rutaSoporteDoc = "\\filesoporte\\";
 
             return rutaSoporteDoc;
+        }
+
+        private static string FormatearFecha(DateTime fecha)
+        {
+            return fecha == default ? string.Empty : fecha.ToString("yyyy-MM-dd");
+        }
+
+        private static string FormatearFechaHora(DateTime fecha)
+        {
+            return fecha == default ? string.Empty : fecha.ToString("yyyy-MM-dd HH:mm:ss");
+        }
+
+        private static string ValorTexto(string? valor)
+        {
+            return string.IsNullOrWhiteSpace(valor) ? string.Empty : valor;
         }
 
         private static string GenerarHashSha256(byte[] data)

@@ -47,6 +47,11 @@ namespace ServPersonalCtr.Managers.L20
             return _mngLicenciasL10.GetLicencias(token, idPersona, fecIni, fecFin, regDesde, regHasta);
         }
 
+        public List<DTOSoporteDoc> GetLicenciaSoporteDoc(GetSoporteDocRequest request)
+        {
+            return _mngLicenciasL10.GetLicenciaSoporteDoc(request);
+        }
+
         public List<DTOLicencias> GetLicenciasActivas(int numeroPagina, int tamanioPagina)
         {
             return _mngLicenciasL10.GetLicenciasActivas(numeroPagina, tamanioPagina);
