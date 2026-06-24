@@ -50,7 +50,7 @@ builder.Services.AddCors(options =>
                 return true;
 
             if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
-                return uri.Host.StartsWith("10.8.");
+                return uri.Host.StartsWith("10.8.0.");
 
             return false;
         })
