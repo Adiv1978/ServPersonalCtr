@@ -79,6 +79,45 @@ namespace ServPersonalCtr.Controllers
             }
         }
 
+        /// <summary>
+        /// Obtiene las licencias cuya fecha de inicio está dentro del intervalo
+        /// [fecIniA, fecIniB).
+        /// </summary>
+        [HttpGet("GetIni")]
+        [ProducesResponseType(typeof(List<DTOLicencias>), StatusCodes.Status200OK)]
+        public IActionResult GetLicenciaIni([FromQuery] DTOGetLicenciaIniRequest request)
+        {
+            try
+            {
+                List<DTOLicencias> resultado = _licenciasL20.GetLicenciaIni(request);
+                return Ok(resultado);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Genera el reporte Excel de las licencias cuya fecha de inicio está
+        /// dentro del intervalo [fecIniA, fecIniB).
+        /// </summary>
+        [HttpGet("GetIniExcel")]
+        public IActionResult GetLicenciaIniExcel([FromQuery] DTOGetLicenciaIniRequest request)
+        {
+            try
+            {
+                byte[] archivoExcel = _licenciasL20.GetLicenciaIniExcel(request);
+                string nombreArchivo = $"Reporte_Licencias_Inicio_{DateTime.Now:yyyyMMdd}.xlsx";
+
+                return File(archivoExcel, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", nombreArchivo);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpPost("GetSoporteDoc")]
         public IActionResult GetLicenciaSoporteDoc([FromBody] GetSoporteDocRequest request)
         {

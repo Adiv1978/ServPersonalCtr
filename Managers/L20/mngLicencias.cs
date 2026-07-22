@@ -47,6 +47,62 @@ namespace ServPersonalCtr.Managers.L20
             return _mngLicenciasL10.GetLicencias(token, idPersona, fecIni, fecFin, regDesde, regHasta);
         }
 
+        public List<DTOLicencias> GetLicenciaIni(DTOGetLicenciaIniRequest request)
+        {
+            return _mngLicenciasL10.GetLicenciaIni(request);
+        }
+
+        public byte[] GetLicenciaIniExcel(DTOGetLicenciaIniRequest request)
+        {
+            List<DTOLicencias> datos = _mngLicenciasL10.GetLicenciaIni(request);
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Licencias por fecha");
+
+            worksheet.Cell(1, 1).Value = "No. Licencia";
+            worksheet.Cell(1, 2).Value = "Empleado";
+            worksheet.Cell(1, 3).Value = "Cedula";
+            worksheet.Cell(1, 4).Value = "Puesto";
+            worksheet.Cell(1, 5).Value = "Desde";
+            worksheet.Cell(1, 6).Value = "Hasta";
+            worksheet.Cell(1, 7).Value = "Dias";
+            worksheet.Cell(1, 8).Value = "Diagnostico";
+            worksheet.Cell(1, 9).Value = "Observacion";
+
+            var headerRange = worksheet.Range("A1:I1");
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Font.FontColor = XLColor.White;
+            headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#08445B");
+
+            int currentRow = 2;
+            foreach (DTOLicencias licencia in datos)
+            {
+                worksheet.Cell(currentRow, 1).Value = licencia.NoLicencia;
+                worksheet.Cell(currentRow, 2).Value = licencia.EmpleadoNombreCompleto;
+                worksheet.Cell(currentRow, 3).Value = licencia.EmpleadoCedula;
+                worksheet.Cell(currentRow, 4).Value = licencia.PuestoTrabajo;
+                worksheet.Cell(currentRow, 5).Value = licencia.FecLicenciaIni;
+                worksheet.Cell(currentRow, 6).Value = licencia.FecLicenciaFin;
+                worksheet.Cell(currentRow, 7).Value = licencia.TiempoLicencia;
+                worksheet.Cell(currentRow, 8).Value = licencia.Diagnostico;
+                worksheet.Cell(currentRow, 9).Value = licencia.Observacion;
+                currentRow++;
+            }
+
+            if (datos.Count > 0)
+            {
+                worksheet.Range(2, 5, currentRow - 1, 6).Style.DateFormat.Format = "dd/MM/yyyy";
+                worksheet.Range(1, 1, currentRow - 1, 9).CreateTable();
+            }
+
+            worksheet.SheetView.FreezeRows(1);
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return stream.ToArray();
+        }
+
         public List<DTOSoporteDoc> GetLicenciaSoporteDoc(GetSoporteDocRequest request)
         {
             return _mngLicenciasL10.GetLicenciaSoporteDoc(request);

@@ -5,7 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddScoped<ServPersonalCtr.Managers.L00.DBGenericManager>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L00.FileSoporteHelper>();
-builder.Services.AddHttpClient<ServPersonalCtr.Managers.L00.GptHelper>();
+builder.Services.AddHttpClient<ServPersonalCtr.Managers.L00.GeminiHelper>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L10.MngFileSoporte>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L10.MngGpt>();
 builder.Services.AddScoped<ServPersonalCtr.Managers.L10.mngSeguridad>();

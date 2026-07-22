@@ -206,31 +206,45 @@ namespace ServPersonalCtr.Managers.L10
 
             foreach (DataRow row in dt.Rows)
             {
-                list.Add(new DTOLicencias
+                list.Add(ConvertirLicencia(row));
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// Obtiene licencias cuya fecha de inicio pertenece al intervalo
+        /// [FecIniA, FecIniB), usando fn_getlicenciaini.
+        /// </summary>
+        public List<DTOLicencias> GetLicenciaIni(DTOGetLicenciaIniRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            if (request.FecIniA == default || request.FecIniB == default)
+                throw new ArgumentException("Las fechas inicial y final son requeridas.", nameof(request));
+
+            if (request.FecIniB.Date <= request.FecIniA.Date)
+                throw new ArgumentException("La fecha final debe ser mayor que la fecha inicial.", nameof(request));
+
+            var parameters = new List<NpgsqlParameter>
+            {
+                new NpgsqlParameter("p_fecini_a", NpgsqlTypes.NpgsqlDbType.Date)
                 {
-                    LicenciaId = Convert.ToInt32(row["licencia_id"]),
-                    NoLicencia = row["nolicencia"].ToString() ?? string.Empty,
-                    IdPersona = Convert.ToInt32(row["idpersona"]),
-                    EmpleadoCedula = row["empleado_cedula"].ToString() ?? string.Empty,
-                    EmpleadoNombreCompleto = row["empleado_nombre_completo"].ToString() ?? string.Empty,
-                    PuestoTrabajo = row["puestotrabajo"].ToString() ?? string.Empty,
-                    FecLicenciaIni = row["feclicenciaini"] is DateOnly dIni
-                                     ? dIni.ToDateTime(TimeOnly.MinValue)
-                                     : Convert.ToDateTime(row["feclicenciaini"]),
-                    FecLicenciaFin = row["feclicenciafin"] is DateOnly dFin
-                                     ? dFin.ToDateTime(TimeOnly.MinValue)
-                                     : Convert.ToDateTime(row["feclicenciafin"]),
-                    TiempoLicencia = Convert.ToInt32(row["tiempolicencia"]),
-                    DiaFaltantes = Convert.ToInt32(row["diafaltantes"]),
-                    Diagnostico = row["diagnostico"].ToString() ?? string.Empty,
-                    Observacion = row["observacion"].ToString() ?? string.Empty,
-                    Auditoria = Convert.ToBoolean(row["auditoria"]),
-                    FechaRegistroSistema = row["fecha_registro_sistema"] is DateOnly dReg
-                                           ? dReg.ToDateTime(TimeOnly.MinValue)
-                                           : Convert.ToDateTime(row["fecha_registro_sistema"]),
-                    RegistradoPorId = Convert.ToInt32(row["registrado_por_id"]),
-                    RegistradoPorNick = row["registrado_por_nick"].ToString() ?? string.Empty
-                });
+                    Value = request.FecIniA.Date
+                },
+                new NpgsqlParameter("p_fecini_b", NpgsqlTypes.NpgsqlDbType.Date)
+                {
+                    Value = request.FecIniB.Date
+                }
+            };
+
+            DataTable dt = _dbManager.ExecuteFunctionDataTable("fn_getlicenciaini", parameters);
+            var list = new List<DTOLicencias>();
+
+            foreach (DataRow row in dt.Rows)
+            {
+                list.Add(ConvertirLicencia(row));
             }
 
             return list;
@@ -252,31 +266,7 @@ namespace ServPersonalCtr.Managers.L10
 
             foreach (DataRow row in dt.Rows)
             {
-                list.Add(new DTOLicencias
-                {
-                    LicenciaId = Convert.ToInt32(row["licencia_id"]),
-                    NoLicencia = row["nolicencia"].ToString() ?? string.Empty,
-                    IdPersona = Convert.ToInt32(row["idpersona"]),
-                    EmpleadoCedula = row["empleado_cedula"].ToString() ?? string.Empty,
-                    EmpleadoNombreCompleto = row["empleado_nombre_completo"].ToString() ?? string.Empty,
-                    PuestoTrabajo = row["puestotrabajo"].ToString() ?? string.Empty,
-                    FecLicenciaIni = row["feclicenciaini"] is DateOnly dIni
-                                     ? dIni.ToDateTime(TimeOnly.MinValue)
-                                     : Convert.ToDateTime(row["feclicenciaini"]),
-                    FecLicenciaFin = row["feclicenciafin"] is DateOnly dFin
-                                     ? dFin.ToDateTime(TimeOnly.MinValue)
-                                     : Convert.ToDateTime(row["feclicenciafin"]),
-                    TiempoLicencia = Convert.ToInt32(row["tiempolicencia"]),
-                    DiaFaltantes = Convert.ToInt32(row["diafaltantes"]),
-                    Diagnostico = row["diagnostico"].ToString() ?? string.Empty,
-                    Observacion = row["observacion"].ToString() ?? string.Empty,
-                    Auditoria = Convert.ToBoolean(row["auditoria"]),
-                    FechaRegistroSistema = row["fecha_registro_sistema"] is DateOnly dReg
-                                           ? dReg.ToDateTime(TimeOnly.MinValue)
-                                           : Convert.ToDateTime(row["fecha_registro_sistema"]),
-                    RegistradoPorId = Convert.ToInt32(row["registrado_por_id"]),
-                    RegistradoPorNick = row["registrado_por_nick"].ToString() ?? string.Empty
-                });
+                list.Add(ConvertirLicencia(row));
             }
 
             return list;
@@ -345,6 +335,36 @@ namespace ServPersonalCtr.Managers.L10
                 minutos = 60;
 
             return minutos;
+        }
+
+        private static DTOLicencias ConvertirLicencia(DataRow row)
+        {
+            return new DTOLicencias
+            {
+                LicenciaId = Convert.ToInt32(row["licencia_id"]),
+                NoLicencia = row["nolicencia"].ToString() ?? string.Empty,
+                IdPersona = Convert.ToInt32(row["idpersona"]),
+                EmpleadoCedula = row["empleado_cedula"].ToString() ?? string.Empty,
+                EmpleadoNombreCompleto = row["empleado_nombre_completo"].ToString() ?? string.Empty,
+                PuestoTrabajo = row["puestotrabajo"].ToString() ?? string.Empty,
+                FecLicenciaIni = ConvertirFecha(row["feclicenciaini"]),
+                FecLicenciaFin = ConvertirFecha(row["feclicenciafin"]),
+                TiempoLicencia = Convert.ToInt32(row["tiempolicencia"]),
+                DiaFaltantes = Convert.ToInt32(row["diafaltantes"]),
+                Diagnostico = row["diagnostico"].ToString() ?? string.Empty,
+                Observacion = row["observacion"].ToString() ?? string.Empty,
+                Auditoria = Convert.ToBoolean(row["auditoria"]),
+                FechaRegistroSistema = ConvertirFecha(row["fecha_registro_sistema"]),
+                RegistradoPorId = Convert.ToInt32(row["registrado_por_id"]),
+                RegistradoPorNick = row["registrado_por_nick"].ToString() ?? string.Empty
+            };
+        }
+
+        private static DateTime ConvertirFecha(object valor)
+        {
+            return valor is DateOnly fecha
+                ? fecha.ToDateTime(TimeOnly.MinValue)
+                : Convert.ToDateTime(valor);
         }
     }
 }

@@ -5,11 +5,11 @@ namespace ServPersonalCtr.Managers.L10
 {
     public class MngGpt
     {
-        private readonly GptHelper _gptHelper;
+        private readonly GeminiHelper _geminiHelper;
 
-        public MngGpt(GptHelper gptHelper)
+        public MngGpt(GeminiHelper geminiHelper)
         {
-            _gptHelper = gptHelper;
+            _geminiHelper = geminiHelper;
         }
 
         /// <summary>
@@ -20,7 +20,7 @@ namespace ServPersonalCtr.Managers.L10
         /// <returns>Datos extraídos del documento.</returns>
         public async Task<GPT_Licencias> AnalizarLicenciaPdfAsync(byte[] pdfData, string nombreArchivo = "licencia.png")
         {
-            return await _gptHelper.AnalizarLicenciaPdfAsync(pdfData, nombreArchivo);
+            return await _geminiHelper.AnalizarLicenciaPdfAsync(pdfData, nombreArchivo);
         }
     }
 }

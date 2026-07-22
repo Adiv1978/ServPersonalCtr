@@ -5,15 +5,15 @@
 - El proyecto es una API `ASP.NET Core` sobre `.NET 10`.
 - Usa PostgreSQL mediante funciones almacenadas (`fn_setseccion`, `fn_validateseccion`, `fn_getpersona`, `fn_getlicencia`, entre otras).
 - Guarda soportes documentales en disco y luego los respalda en Google Drive.
-- Consume OpenAI para analizar licencias en PNG.
-- El backend necesita variables sensibles fuera del repositorio: base de datos, OpenAI y Google Drive.
+- Consume Gemini para analizar licencias en PNG.
+- El backend necesita variables sensibles fuera del repositorio: base de datos, Gemini y Google Drive.
 
 ## 2. Riesgos detectados antes de subirlo
 
 - El `appsettings.json` tenia una cadena de conexion con credenciales reales; ahora queda lista para inyectarse por variables de entorno.
 - La ruta `\filesoporte\` era de estilo Windows y en Linux puede fallar o terminar en una ruta incorrecta.
 - `UseHttpsRedirection()` sin `ForwardedHeaders` puede provocar redirecciones incorrectas cuando la API corre detras de un proxy TLS.
-- El respaldo SQL `respaldo_completo.sql` no refleja todo lo que hoy pide el codigo. Antes de produccion hay que validar funciones como `fn_getsoportedoc`, `fn_updatelicencia` y `fn_getlicenciasactivas`, y tambien la firma actual de `fn_setlicencias`.
+- El respaldo SQL `respaldo_completo.sql` quedo desactualizado (le faltaban `fn_getsoportedoc`, `fn_updatelicencia`, `fn_getlicenciaini` y `fn_getlicenciasactivas`, y su `fn_setlicencias` no incluia `p_soportes jsonb`). Usar `respaldo_completo_2026-07-21.sql`, generado con `pg_dump` desde la base de produccion el 2026-07-21 y verificado contra las llamadas del backend (sin incongruencias).
 
 ## 3. Arquitectura recomendada
 
@@ -63,7 +63,7 @@ Edita `.env.production` y completa al menos:
 
 - `DOMAIN`: dominio publico que apuntara al servidor.
 - `ConnectionStrings__PostgresConnection`: conexion real a PostgreSQL.
-- `OpenAI__ApiKey`: clave real si usaras el modulo GPT.
+- `Gemini__ApiKey`: clave real para el módulo de análisis de licencias.
 - `GoogleDrive__ClientEmail` y `GoogleDrive__PrivateKey`: credenciales del service account si usaras respaldo en Drive.
 - `Cors__AllowedOrigins__0`: URL exacta del frontend, por ejemplo `https://app.midominio.com`.
 
@@ -110,9 +110,9 @@ Eso recompila la API, recrea contenedores y mantiene el volumen persistente de s
 
 Antes de habilitar produccion:
 
-1. Restaura o aplica el esquema de PostgreSQL.
+1. Restaura o aplica el esquema de PostgreSQL usando el respaldo mas reciente (`respaldo_completo_2026-07-21.sql`).
 2. Verifica que existan las funciones requeridas por el codigo actual.
-3. Confirma que `fn_setlicencias` acepte tambien la estructura de soportes que hoy envia el backend.
+3. Confirma que `fn_setlicencias` acepte tambien la estructura de soportes que hoy envia el backend (el respaldo del 2026-07-21 ya la incluye con `p_soportes jsonb`).
 4. Prueba manualmente `Login`, `Personal/Get`, `Licencias/Set` y `Licencias/Get`.
 
 ## 12. Si no tienes dominio publico
